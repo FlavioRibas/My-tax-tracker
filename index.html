@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>Physio Tax & Receipt Tracker</title>
+  <style>
+    :root{
+      --primary:#0f766e; --primary2:#115e59; --bg:#f7faf9; --card:#ffffff; --text:#12211f;
+      --muted:#64748b; --border:#d8e0df; --danger:#dc2626; --warn:#f59e0b; --good:#16a34a;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    header{position:sticky;top:0;z-index:10;background:linear-gradient(135deg,var(--primary),#0e7490);color:#fff;padding:16px env(safe-area-inset-right) 12px env(safe-area-inset-left);box-shadow:0 2px 10px rgba(0,0,0,.12)}
+    .header-inner{max-width:1100px;margin:auto;padding:0 14px}
+    h1{font-size:21px;margin:0}
+    .subtitle{font-size:13px;opacity:.9;margin-top:2px}
+    nav{display:flex;gap:8px;overflow-x:auto;margin-top:12px;padding-bottom:2px}
+    nav button{white-space:nowrap;width:auto;margin:0;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);color:white;padding:8px 12px;border-radius:999px;font-weight:700}
+    nav button.active{background:white;color:var(--primary)}
+    main{max-width:1100px;margin:auto;padding:14px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:15px;margin-bottom:14px;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+    h2{font-size:19px;margin:0 0 10px} h3{font-size:16px;margin:14px 0 8px}
+    label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 5px;text-transform:uppercase;letter-spacing:.02em}
+    input,select,textarea,button{font:inherit}
+    input,select,textarea{width:100%;border:1px solid var(--border);border-radius:12px;background:white;padding:11px;font-size:16px}
+    textarea{min-height:70px}
+    button{width:100%;border:0;border-radius:12px;background:var(--primary);color:white;padding:11px;font-weight:800;margin-top:10px}
+    button.secondary{background:white;color:var(--primary);border:1px solid var(--primary)}
+    button.danger{background:var(--danger)}
+    button.ghost{background:#eef7f6;color:var(--primary)}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .metric{background:#f1f8f7;border:1px solid var(--border);border-radius:15px;padding:12px}
+    .metric span{display:block;color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase}
+    .metric b{display:block;font-size:21px;margin-top:5px}
+    .hidden{display:none!important}
+    .small{font-size:13px;color:var(--muted);line-height:1.4}
+    .pill{display:inline-flex;gap:5px;align-items:center;border:1px solid var(--border);background:#f8fafc;border-radius:999px;padding:5px 8px;font-size:12px;color:var(--muted)}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap}.toolbar button{width:auto}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid var(--border);padding:8px;text-align:left;vertical-align:top}
+    th{font-size:12px;color:var(--muted)}
+    .thumb{width:56px;height:56px;object-fit:cover;border-radius:10px;border:1px solid var(--border);background:#f8fafc}
+    .receipt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+    .receipt-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:white}
+    .receipt-card img{width:100%;height:160px;object-fit:cover;background:#f8fafc}
+    .receipt-card div{padding:8px;font-size:13px}
+    .lock{position:fixed;inset:0;background:linear-gradient(135deg,#0f766e,#0e7490);z-index:99;display:flex;align-items:center;justify-content:center;padding:16px}
+    .lock .card{max-width:380px;width:100%;border:0}
+    .badge{font-size:12px;font-weight:800;padding:4px 7px;border-radius:999px;background:#eef7f6;color:var(--primary)}
+    @media(max-width:760px){
+      .grid,.grid3,.metrics{grid-template-columns:1fr}
+      table,thead,tbody,tr,th,td{display:block}
+      thead{display:none}
+      tr{border:1px solid var(--border);border-radius:14px;margin-bottom:9px;padding:8px;background:white}
+      td{border:0;padding:4px 0}
+      td:before{content:attr(data-label) ": ";font-weight:800;color:var(--muted)}
+      .toolbar button{width:100%}
+    }
+  </style>
+</head>
+<body>
+<div id="lockScreen" class="lock hidden">
+  <div class="card">
+    <h2>Unlock Tracker</h2>
+    <p class="small">Enter your private app PIN. This protects casual access on this device.</p>
+    <input id="pinInput" type="password" inputmode="numeric" placeholder="PIN">
+    <button onclick="unlock()">Unlock</button>
+    <button class="secondary" onclick="resetPin()">Reset PIN on This Device</button>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner">
+    <h1>Physio Tax & Receipt Tracker</h1>
+    <div class="subtitle">Private PWA for expenses, receipts, vehicle log, home office, and tax reports</div>
+    <nav id="tabs"></nav>
+  </div>
+</header>
+
+<main>
+  <section id="dashboard" class="view"></section>
+
+  <section id="expense" class="view hidden">
+    <div class="card">
+      <h2>Add / Edit Expense</h2>
+      <div class="grid">
+        <div><label>Date</label><input id="date" type="date"></div>
+        <div><label>Amount CAD</label><input id="amount" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+      </div>
+      <div class="grid">
+        <div><label>Vendor / Description</label><input id="vendor" placeholder="e.g., Staples, College fee, clinic rental"></div>
+        <div><label>HST / Tax Paid</label><input id="hst" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+      </div>
+      <div class="grid">
+        <div><label>Category</label><select id="category"></select></div>
+        <div><label>Sub-category</label><select id="subcategory"></select></div>
+      </div>
+      <div class="grid">
+        <div><label>Business Use %</label><input id="businessUse" type="number" min="0" max="100" step="1" value="100"></div>
+        <div><label>Payment Method</label><select id="payment"><option>Credit Card</option><option>Debit</option><option>Cash</option><option>E-transfer</option><option>Bank Payment</option><option>Other</option></select></div>
+      </div>
+      <label>Receipt Photo / PDF</label>
+      <input id="receiptFile" type="file" accept="image/*,.pdf" capture="environment">
+      <div id="receiptPreview" class="small" style="margin-top:8px"></div>
+      <label>Receipt OCR / Search Text</label>
+      <textarea id="ocrText" placeholder="Paste or type receipt text. Future OCR service can populate this automatically."></textarea>
+      <label>Notes</label>
+      <textarea id="notes" placeholder="Optional notes"></textarea>
+      <div class="toolbar">
+        <button onclick="saveExpense()">Save Expense</button>
+        <button class="secondary" onclick="clearExpenseForm()">New / Clear</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="expenses" class="view hidden"></section>
+  <section id="receipts" class="view hidden"></section>
+  <section id="vehicle" class="view hidden"></section>
+  <section id="homeoffice" class="view hidden"></section>
+  <section id="reports" class="view hidden"></section>
+  <section id="settings" class="view hidden"></section>
+</main>
+
+<script>
+const DB_NAME="physio-tax-receipt-tracker-v2", DB_VER=1;
+let db, editId=null, activeTab="dashboard";
+
+const categories = {
+  "Revenue": ["Physiotherapy Services", "Consulting Services", "Other Professional Income"],
+  "Home Office": ["Heat", "Electricity", "Water", "Mortgage Interest", "Rent", "Property Taxes", "Condo / Maintenance Fees", "Home Insurance", "Maintenance", "Cleaning Supplies", "Minor Repairs", "Internet", "Phone", "Other Home Office"],
+  "Vehicle": ["Fuel & Oil", "Electricity for EV", "Vehicle Insurance", "Supplementary Business Insurance", "Registration Fees", "License Fees", "Maintenance & Repairs", "Business Parking", "Tolls", "Lease Payments", "Interest Charges", "Other Vehicle"],
+  "Office & Medical Supplies": ["Stationery", "General Office Supplies", "Printing & Photos", "Furniture", "Decoration", "Medical Supplies", "Assessment Tools", "Treatment Supplies"],
+  "Professional Fees & Memberships": ["College of Physiotherapists", "Professional Association Dues", "Professional Liability Insurance", "Courses", "Certifications", "Seminars", "Conferences", "Accounting Fees", "Tax Preparation Fees", "Legal Fees", "Consulting Fees"],
+  "Travel": ["Airfare", "Train Tickets", "Bus Tickets", "Taxi / Uber", "Hotels", "Short-Term Rentals", "Baggage Fees", "Travel Incidentals"],
+  "Meals & Entertainment": ["Meals During Business Travel", "Client Meals", "Networking Events", "Event Tickets", "Room Rentals"],
+  "Banking & Finance": ["Monthly Fees", "Transaction Fees", "Interest Charges", "Credit Card Processing Fees"],
+  "Technology & Software": ["Apps", "Practice Management Software", "Scheduling Software", "Cloud Storage", "Website Hosting", "Domain Registration", "Advertising", "Social Media Advertising"],
+  "Capital Assets": ["Computers", "Monitors", "Printers", "Hardware", "Office Furniture", "Medical Equipment", "Appliances", "Other Equipment"],
+  "Clinic Rent": ["Clinic Office Rental", "Treatment Room Rental"]
+};
+
+const tabs = [
+  ["dashboard","Dashboard"],["expense","Add Expense"],["expenses","Expenses"],["receipts","Receipts"],
+  ["vehicle","Vehicle"],["homeoffice","Home Office"],["reports","Reports"],["settings","Settings"]
+];
+
+function $(id){return document.getElementById(id)}
+function money(n){return Number(n||0).toLocaleString("en-CA",{style:"currency",currency:"CAD"})}
+function today(){return new Date().toISOString().slice(0,10)}
+function year(){return new Date().getFullYear()}
+function uid(){return Date.now()+Math.random()}
+
+function openDB(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,DB_VER);
+    req.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains("expenses")) d.createObjectStore("expenses",{keyPath:"id"});
+      if(!d.objectStoreNames.contains("vehicle")) d.createObjectStore("vehicle",{keyPath:"id"});
+      if(!d.objectStoreNames.contains("settings")) d.createObjectStore("settings",{keyPath:"key"});
+    };
+    req.onsuccess=e=>{db=e.target.result;resolve(db)};
+    req.onerror=e=>reject(e);
+  });
+}
+function store(name,mode="readonly"){return db.transaction(name,mode).objectStore(name)}
+function getAll(name){return new Promise((res,rej)=>{const r=store(name).getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=rej})}
+function put(name,obj){return new Promise((res,rej)=>{const r=store(name,"readwrite").put(obj);r.onsuccess=res;r.onerror=rej})}
+function del(name,id){return new Promise((res,rej)=>{const r=store(name,"readwrite").delete(id);r.onsuccess=res;r.onerror=rej})}
+function clearStore(name){return new Promise((res,rej)=>{const r=store(name,"readwrite").clear();r.onsuccess=res;r.onerror=rej})}
+function getSetting(key){return new Promise((res)=>{const r=store("settings").get(key);r.onsuccess=()=>res(r.result?.value);r.onerror=()=>res(null)})}
+function setSetting(key,value){return put("settings",{key,value})}
+
+function initTabs(){
+  $("tabs").innerHTML=tabs.map(([id,name])=>`<button id="tab_${id}" onclick="showTab('${id}')">${name}</button>`).join("");
+}
+function showTab(id){
+  activeTab=id;
+  document.querySelectorAll(".view").forEach(v=>v.classList.add("hidden"));
+  $(id).classList.remove("hidden");
+  tabs.forEach(([tid])=>$("tab_"+tid).classList.toggle("active",tid===id));
+  render();
+}
+
+function populateCategories(){
+  $("category").innerHTML=Object.keys(categories).map(c=>`<option>${c}</option>`).join("");
+  $("category").addEventListener("change",updateSubcategories);
+  updateSubcategories();
+}
+function updateSubcategories(){
+  const cat=$("category").value;
+  $("subcategory").innerHTML=(categories[cat]||[]).map(s=>`<option>${s}</option>`).join("");
+}
+async function fileToDataURL(file){
+  if(!file) return null;
+  if(file.size > 6*1024*1024){ alert("Receipt file is large. Please use a file under 6 MB."); return null; }
+  return await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(file)});
+}
+$("receiptFile").addEventListener("change", async ()=>{
+  const f=$("receiptFile").files[0];
+  $("receiptPreview").innerHTML=f?`Selected: ${f.name} (${Math.round(f.size/1024)} KB)`:"";
+});
+
+async function saveExpense(){
+  const file=$("receiptFile").files[0];
+  const receiptData= file ? await fileToDataURL(file) : null;
+  const existing = editId ? (await getAll("expenses")).find(x=>x.id===editId) : {};
+  const item={
+    id: editId || uid(),
+    date:$("date").value||today(),
+    amount:parseFloat($("amount").value||0),
+    hst:parseFloat($("hst").value||0),
+    vendor:$("vendor").value.trim(),
+    category:$("category").value,
+    subcategory:$("subcategory").value,
+    businessUse:parseFloat($("businessUse").value||100),
+    payment:$("payment").value,
+    receiptData: receiptData || existing.receiptData || null,
+    receiptName: file?.name || existing.receiptName || "",
+    receiptType: file?.type || existing.receiptType || "",
+    ocrText:$("ocrText").value.trim(),
+    notes:$("notes").value.trim(),
+    updatedAt:new Date().toISOString()
+  };
+  if(!item.amount && item.category!=="Revenue"){alert("Enter an amount.");return}
+  await put("expenses",item);
+  clearExpenseForm();
+  alert("Saved.");
+  showTab("expenses");
+}
+function clearExpenseForm(){
+  editId=null; $("date").value=today(); $("amount").value=""; $("hst").value=""; $("vendor").value="";
+  $("businessUse").value="100"; $("payment").value="Credit Card"; $("receiptFile").value=""; $("receiptPreview").innerHTML="";
+  $("ocrText").value=""; $("notes").value=""; $("category").value="Revenue"; updateSubcategories();
+}
+
+async function editExpense(id){
+  const e=(await getAll("expenses")).find(x=>x.id===id); if(!e)return;
+  editId=id; showTab("expense");
+  $("date").value=e.date; $("amount").value=e.amount; $("hst").value=e.hst||""; $("vendor").value=e.vendor||"";
+  $("category").value=e.category; updateSubcategories(); $("subcategory").value=e.subcategory;
+  $("businessUse").value=e.businessUse; $("payment").value=e.payment||"Credit Card"; $("ocrText").value=e.ocrText||""; $("notes").value=e.notes||"";
+  $("receiptPreview").innerHTML=e.receiptData?`Existing receipt attached: ${e.receiptName||"receipt"}`:"No receipt attached.";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+async function deleteExpense(id){ if(confirm("Delete this expense and its receipt?")){await del("expenses",id);render()} }
+
+function filterExpenses(rows){
+  const y=$("reportYear")?.value || String(year());
+  const q=($("search")?.value||"").toLowerCase();
+  const cat=$("catFilter")?.value||"";
+  return rows.filter(e=>(!y||e.date.startsWith(y)) && (!cat||e.category===cat) && (!q||JSON.stringify(e).toLowerCase().includes(q)));
+}
+
+async function renderDashboard(){
+  const rows=await getAll("expenses"); const veh=await getAll("vehicle");
+  const y=String(year()); const yr=rows.filter(e=>e.date?.startsWith(y));
+  const total=yr.reduce((s,e)=>s+Number(e.amount||0),0);
+  const deductible=yr.reduce((s,e)=>s+Number(e.amount||0)*Number(e.businessUse||100)/100,0);
+  const hst=yr.reduce((s,e)=>s+Number(e.hst||0)*Number(e.businessUse||100)/100,0);
+  const receipts=yr.filter(e=>e.receiptData).length;
+  $("dashboard").innerHTML=`
+    <div class="metrics">
+      <div class="metric"><span>${y} Expenses</span><b>${money(total)}</b></div>
+      <div class="metric"><span>Deductible</span><b>${money(deductible)}</b></div>
+      <div class="metric"><span>HST Tracked</span><b>${money(hst)}</b></div>
+      <div class="metric"><span>Receipts</span><b>${receipts}/${yr.length}</b></div>
+    </div>
+    <div class="card">
+      <h2>Quick Actions</h2>
+      <div class="toolbar">
+        <button onclick="showTab('expense')">Add Expense + Receipt</button>
+        <button class="secondary" onclick="showTab('vehicle')">Add Mileage</button>
+        <button class="secondary" onclick="showTab('reports')">Export Reports</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Tax-Ready Categories</h2>
+      <p class="small">Pre-loaded categories are customized for a self-employed physiotherapist/contractor, including home office, vehicle, clinic rent, professional dues, medical supplies, technology, travel, meals, and capital assets.</p>
+    </div>`;
+}
+
+async function renderExpenses(){
+  const all=await getAll("expenses");
+  $("expenses").innerHTML=`
+    <div class="card">
+      <h2>Expense List</h2>
+      <div class="grid3">
+        <div><label>Year</label><input id="reportYear" type="number" value="${year()}" onchange="render()"></div>
+        <div><label>Category</label><select id="catFilter" onchange="render()"><option value="">All</option>${Object.keys(categories).map(c=>`<option>${c}</option>`).join("")}</select></div>
+        <div><label>Search</label><input id="search" placeholder="vendor, text, category" oninput="render()"></div>
+      </div>
+      <div id="expensesTable" style="margin-top:12px"></div>
+    </div>`;
+  const rows=filterExpenses(all).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  const total=rows.reduce((s,e)=>s+Number(e.amount||0),0);
+  $("expensesTable").innerHTML = `<p><span class="badge">${rows.length} items</span> <span class="badge">${money(total)}</span></p>` + (!rows.length?`<p class="small">No expenses found.</p>`:`
+  <table><thead><tr><th>Date</th><th>Vendor</th><th>Category</th><th>Amount</th><th>Receipt</th><th>Actions</th></tr></thead><tbody>
+  ${rows.map(e=>`<tr>
+    <td data-label="Date">${e.date}</td>
+    <td data-label="Vendor">${e.vendor||""}</td>
+    <td data-label="Category">${e.category}<br><span class="small">${e.subcategory||""}</span></td>
+    <td data-label="Amount">${money(e.amount)}<br><span class="small">Deductible: ${money(e.amount*e.businessUse/100)}</span></td>
+    <td data-label="Receipt">${e.receiptData?`<img class="thumb" src="${e.receiptData}" onclick="openReceipt(${e.id})">`:"—"}</td>
+    <td data-label="Actions"><button class="secondary" onclick="editExpense(${e.id})">Edit</button><button class="danger" onclick="deleteExpense(${e.id})">Delete</button></td>
+  </tr>`).join("")}</tbody></table>`);
+}
+
+async function openReceipt(id){
+  const e=(await getAll("expenses")).find(x=>x.id===id); if(!e?.receiptData)return;
+  const w=window.open(); w.document.write(`<title>Receipt</title><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${e.receiptData}" style="max-width:100%;height:auto"></body>`);
+}
+async function renderReceipts(){
+  const rows=(await getAll("expenses")).filter(e=>e.receiptData).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  $("receipts").innerHTML=`
+    <div class="card"><h2>Receipt Library</h2>
+    <p class="small">Tap any receipt to view it full screen. Receipt text is searchable from the Expenses tab.</p>
+    <div class="receipt-grid">${rows.map(e=>`
+      <div class="receipt-card" onclick="openReceipt(${e.id})">
+        <img src="${e.receiptData}">
+        <div><b>${e.vendor||"Receipt"}</b><br>${e.date}<br>${money(e.amount)}<br><span class="small">${e.category}</span></div>
+      </div>`).join("") || `<p class="small">No receipts attached yet.</p>`}</div></div>`;
+}
+
+async function renderVehicle(){
+  const rows=await getAll("vehicle");
+  const y=String(year()); const yr=rows.filter(r=>r.date?.startsWith(y));
+  const business=yr.reduce((s,r)=>s+Number(r.businessKm||0),0), total=yr.reduce((s,r)=>s+Number(r.totalKm||0),0);
+  const pct=total?business/total*100:0;
+  $("vehicle").innerHTML=`
+  <div class="card"><h2>Vehicle Log</h2>
+    <div class="grid3"><div><label>Date</label><input id="vDate" type="date" value="${today()}"></div><div><label>Business KM</label><input id="vBusiness" type="number" step="0.1"></div><div><label>Total KM</label><input id="vTotal" type="number" step="0.1"></div></div>
+    <label>Trip / Purpose</label><input id="vPurpose" placeholder="Clinic visit, client appointment, supplies">
+    <button onclick="saveVehicle()">Save Vehicle Entry</button>
+  </div>
+  <div class="metrics">
+    <div class="metric"><span>${y} Business KM</span><b>${business.toFixed(1)}</b></div>
+    <div class="metric"><span>${y} Total KM</span><b>${total.toFixed(1)}</b></div>
+    <div class="metric"><span>Business Use</span><b>${pct.toFixed(1)}%</b></div>
+    <div class="metric"><span>Entries</span><b>${yr.length}</b></div>
+  </div>
+  <div class="card"><h2>Vehicle Entries</h2>${!rows.length?`<p class="small">No entries yet.</p>`:`<table><thead><tr><th>Date</th><th>Purpose</th><th>Business KM</th><th>Total KM</th><th></th></tr></thead><tbody>${rows.sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`<tr><td data-label="Date">${r.date}</td><td data-label="Purpose">${r.purpose||""}</td><td data-label="Business KM">${r.businessKm}</td><td data-label="Total KM">${r.totalKm}</td><td data-label="Actions"><button class="danger" onclick="deleteVehicle(${r.id})">Delete</button></td></tr>`).join("")}</tbody></table>`}</div>`;
+}
+async function saveVehicle(){await put("vehicle",{id:uid(),date:$("vDate").value||today(),businessKm:parseFloat($("vBusiness").value||0),totalKm:parseFloat($("vTotal").value||0),purpose:$("vPurpose").value.trim()});renderVehicle()}
+async function deleteVehicle(id){if(confirm("Delete vehicle entry?")){await del("vehicle",id);renderVehicle()}}
+
+async function renderHomeOffice(){
+  const s=await getSetting("homeOffice")||{};
+  const total=[s.heat,s.electricity,s.water,s.insurance,s.maintenance,s.rentMortgage,s.propertyTax,s.condo].reduce((a,b)=>a+Number(b||0),0);
+  const pct=s.homeSqft?Number(s.officeSqft||0)/Number(s.homeSqft||1)*100:0;
+  const deductible=total*pct/100;
+  $("homeoffice").innerHTML=`
+  <div class="card"><h2>Home Office Calculator</h2>
+    <div class="grid"><div><label>Office Square Feet</label><input id="officeSqft" type="number" value="${s.officeSqft||""}"></div><div><label>Total Home Square Feet</label><input id="homeSqft" type="number" value="${s.homeSqft||""}"></div></div>
+    <h3>Annual Home Costs</h3>
+    <div class="grid">
+      ${["heat","electricity","water","insurance","maintenance","rentMortgage","propertyTax","condo"].map(k=>`<div><label>${labelHome(k)}</label><input id="ho_${k}" type="number" step="0.01" value="${s[k]||""}"></div>`).join("")}
+    </div>
+    <button onclick="saveHomeOffice()">Save Calculator</button>
+  </div>
+  <div class="metrics">
+    <div class="metric"><span>Home Office %</span><b>${pct.toFixed(2)}%</b></div>
+    <div class="metric"><span>Annual Home Costs</span><b>${money(total)}</b></div>
+    <div class="metric"><span>Estimated Deductible</span><b>${money(deductible)}</b></div>
+    <div class="metric"><span>Method</span><b>Area %</b></div>
+  </div>`;
+}
+function labelHome(k){return ({heat:"Heat",electricity:"Electricity",water:"Water",insurance:"Home Insurance",maintenance:"Maintenance",rentMortgage:"Rent / Mortgage Interest",propertyTax:"Property Taxes",condo:"Condo / Maintenance Fees"})[k]}
+async function saveHomeOffice(){
+  const keys=["heat","electricity","water","insurance","maintenance","rentMortgage","propertyTax","condo"];
+  const s={officeSqft:$("officeSqft").value,homeSqft:$("homeSqft").value};
+  keys.forEach(k=>s[k]=$("ho_"+k).value);
+  await setSetting("homeOffice",s); renderHomeOffice();
+}
+
+async function renderReports(){
+  $("reports").innerHTML=`
+  <div class="card"><h2>Reports & Backup</h2>
+    <p class="small">Export CSV for Excel/tax preparation. Export JSON to preserve receipts and restore the full app database on another device.</p>
+    <div class="toolbar">
+      <button onclick="exportExpensesCSV()">Export Expenses CSV</button>
+      <button class="secondary" onclick="exportVehicleCSV()">Export Vehicle CSV</button>
+      <button class="secondary" onclick="exportFullJSON()">Backup Full App JSON</button>
+    </div>
+    <label>Restore Full App JSON</label><input type="file" accept=".json" onchange="importFullJSON(event)">
+  </div>
+  <div class="card"><h2>Tax Package Notes</h2>
+    <p class="small">For CRA support, keep the exported CSV plus the full JSON backup. The JSON contains the receipt images stored on this device.</p>
+  </div>`;
+}
+
+function csvEscape(v){return `"${String(v??"").replace(/"/g,'""')}"`}
+function download(name,content,type){const blob=new Blob([content],{type});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click()}
+async function exportExpensesCSV(){
+  const rows=await getAll("expenses");
+  const header=["Date","Vendor","Amount","HST","Category","Subcategory","Business Use %","Deductible Amount","Payment","Has Receipt","Receipt Text","Notes"];
+  const lines=[header.join(",")].concat(rows.map(e=>[e.date,e.vendor,e.amount,e.hst,e.category,e.subcategory,e.businessUse,(e.amount*e.businessUse/100).toFixed(2),e.payment,e.receiptData?"Yes":"No",e.ocrText,e.notes].map(csvEscape).join(",")));
+  download("physio-expenses.csv",lines.join("\n"),"text/csv");
+}
+async function exportVehicleCSV(){
+  const rows=await getAll("vehicle");
+  const lines=["Date,Purpose,Business KM,Total KM"].concat(rows.map(r=>[r.date,r.purpose,r.businessKm,r.totalKm].map(csvEscape).join(",")));
+  download("vehicle-log.csv",lines.join("\n"),"text/csv");
+}
+async function exportFullJSON(){
+  const data={expenses:await getAll("expenses"),vehicle:await getAll("vehicle"),settings:await getAll("settings"),exportedAt:new Date().toISOString(),app:"physio-tax-receipt-tracker-v2"};
+  download("physio-tax-tracker-full-backup.json",JSON.stringify(data,null,2),"application/json");
+}
+async function importFullJSON(ev){
+  const f=ev.target.files[0]; if(!f)return;
+  const txt=await f.text(); const data=JSON.parse(txt);
+  if(!confirm("Restore this backup? This will replace current app data.")) return;
+  await clearStore("expenses"); await clearStore("vehicle"); await clearStore("settings");
+  for(const e of data.expenses||[]) await put("expenses",e);
+  for(const v of data.vehicle||[]) await put("vehicle",v);
+  for(const s of data.settings||[]) await put("settings",s);
+  alert("Restored."); render();
+}
+
+async function renderSettings(){
+  const pin=await getSetting("pin");
+  $("settings").innerHTML=`
+  <div class="card"><h2>Security</h2>
+    <p class="small">This PWA can use a local PIN lock. True Face ID for PWAs depends on device/browser WebAuthn setup and is not included in this standalone package.</p>
+    <label>${pin?"Change PIN":"Create PIN"}</label><input id="newPin" type="password" inputmode="numeric" placeholder="Enter PIN">
+    <button onclick="savePin()">Save PIN</button>
+  </div>
+  <div class="card"><h2>Data Storage</h2>
+    <p class="small">Receipts and data are stored locally in this browser using IndexedDB. Export a full JSON backup regularly, especially before changing phones or clearing Safari data.</p>
+    <button class="danger" onclick="wipeAll()">Erase All App Data</button>
+  </div>`;
+}
+async function savePin(){await setSetting("pin",$("newPin").value); alert("PIN saved on this device.")}
+async function wipeAll(){if(confirm("Erase all app data on this device?")){await clearStore("expenses");await clearStore("vehicle");await clearStore("settings");location.reload()}}
+
+async function render(){
+  if(activeTab==="dashboard") await renderDashboard();
+  if(activeTab==="expenses") await renderExpenses();
+  if(activeTab==="receipts") await renderReceipts();
+  if(activeTab==="vehicle") await renderVehicle();
+  if(activeTab==="homeoffice") await renderHomeOffice();
+  if(activeTab==="reports") await renderReports();
+  if(activeTab==="settings") await renderSettings();
+}
+async function unlock(){const pin=await getSetting("pin"); if($("pinInput").value===pin){$("lockScreen").classList.add("hidden")}else alert("Incorrect PIN.")}
+async function resetPin(){if(confirm("Remove the PIN from this device?")){await setSetting("pin",null);$("lockScreen").classList.add("hidden")}}
+
+async function boot(){
+  await openDB(); initTabs(); populateCategories(); $("date").value=today();
+  const pin=await getSetting("pin"); if(pin) $("lockScreen").classList.remove("hidden");
+  showTab("dashboard");
+  if("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js");
+}
+boot();
+</script>
+</body>
+</html>
