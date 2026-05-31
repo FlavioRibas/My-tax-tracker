@@ -1,23 +1,28 @@
-# Physio Tax & Receipt Tracker - V4.2 Autofill Fix
+# Physio Tax & Receipt Tracker - V4.3 Stable
 
-## Fix
-This package fixes the GitHub Pages/iPhone issue where OCR completed but fields did not populate visibly.
+## Why this version exists
+V4.2 could crash on reload because of aggressive service-worker/cache behavior and automatic OCR starting immediately after receipt upload.
 
-## Changes
-- Files are packaged at the ZIP root for easier GitHub upload.
-- New service-worker cache name to stop loading the old version.
-- Old caches are automatically deleted.
-- OCR starts automatically after a receipt photo is selected.
-- OCR still has a manual button: Scan Receipt & Auto-Fill Fields.
-- Vendor, date, amount, HST, category, sub-category, and OCR text are written directly into the form fields.
-- Field change/input events are triggered after auto-fill.
+## Fixes
+- Service worker caching disabled to prevent reload crash.
+- Old caches are cleared.
+- OCR no longer starts automatically on photo selection.
+- You manually tap: Scan Receipt & Auto-Fill Fields.
+- OCR still auto-populates the form after scan:
+  - Vendor
+  - Date
+  - Amount
+  - HST
+  - Category
+  - Sub-category
+  - OCR text
+- Duplicate detection remains active.
+- Monthly dashboard, CRA annual report, and backup/share remain included.
 
-## Upload
-Upload these extracted files directly to the root of your GitHub repository:
-- index.html
-- manifest.webmanifest
-- service-worker.js
-- icon.svg
-- README.md
-
-Do not upload the folder itself.
+## Important iPhone/GitHub Pages reset steps
+1. Upload these files to GitHub root.
+2. Open the GitHub Pages URL in Safari.
+3. Tap aA / page menu > Website Settings > Clear Website Data if available.
+4. Or go to iPhone Settings > Safari > Advanced > Website Data > find github.io > Delete.
+5. Reopen the GitHub Pages URL.
+6. Add to Home Screen again.
