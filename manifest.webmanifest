@@ -1,6 +1,6 @@
 {
-  "name": "Tax Tracker",
-  "short_name": "Tax Tracker",
+  "name": "Tax Tracker Improved OCR",
+  "short_name": "Tax OCR+",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#130b04",

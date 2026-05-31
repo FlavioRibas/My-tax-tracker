@@ -293,7 +293,7 @@
     <img class="logo" src="icon.png" alt="Tax Tracker logo">
     <div>
       <h1>Tax Tracker</h1>
-      <div class="subtitle">Simple receipt OCR, expense tracking, reports, and backup</div>
+      <div class="subtitle">Improved receipt OCR with image cleanup, expense tracking, reports, and backup</div>
     </div>
   </div>
   <nav id="tabs"></nav>
@@ -311,8 +311,8 @@
       <div id="receiptPreview" class="small" style="margin-top:8px;"></div>
 
       <div class="ocrbox">
-        <button class="secondary" onclick="runOCR()">Run Simple OCR</button>
-        <div id="ocrStatus" class="small" style="margin-top:8px;">Upload a receipt, then tap Run Simple OCR.</div>
+        <button class="secondary" onclick="runOCR()">Run Improved OCR</button>
+        <div id="ocrStatus" class="small" style="margin-top:8px;">Upload a receipt, then tap Run Improved OCR.</div>
       </div>
 
       <div id="autofillBox" class="success hidden"></div>
@@ -605,24 +605,132 @@ $("receiptFile").addEventListener("change", async () => {
 
   if (currentReceiptData) {
     $("receiptPreview").innerHTML += `<br><img class="thumb" src="${currentReceiptData}" alt="receipt preview">`;
-    $("ocrStatus").textContent = "Receipt loaded. Tap Run Simple OCR.";
+    $("ocrStatus").textContent = "Receipt loaded. Tap Run Improved OCR.";
   }
 });
 
+
+async function preprocessReceiptImage(fileOrDataUrl) {
+  return await new Promise((resolve, reject) => {
+    const image = new Image();
+
+    image.onload = () => {
+      const maxWidth = 1800;
+      const scale = image.width > maxWidth ? maxWidth / image.width : 1;
+      const width = Math.round(image.width * scale);
+      const height = Math.round(image.height * scale);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      context.drawImage(image, 0, 0, width, height);
+
+      const imageData = context.getImageData(0, 0, width, height);
+      const data = imageData.data;
+
+      // Convert to grayscale and increase contrast.
+      let grayscaleValues = [];
+
+      for (let i = 0; i < data.length; i += 4) {
+        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        grayscaleValues.push(gray);
+      }
+
+      // Calculate a dynamic threshold using average brightness.
+      const avg = grayscaleValues.reduce((a, b) => a + b, 0) / grayscaleValues.length;
+      const threshold = Math.max(115, Math.min(185, avg * 0.92));
+
+      for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+        let gray = grayscaleValues[j];
+
+        // Contrast boost around midtone.
+        gray = (gray - 128) * 1.35 + 128;
+
+        // Light thresholding: dark text becomes black, light paper becomes white.
+        const finalValue = gray < threshold ? 0 : 255;
+
+        data[i] = finalValue;
+        data[i + 1] = finalValue;
+        data[i + 2] = finalValue;
+        data[i + 3] = 255;
+      }
+
+      context.putImageData(imageData, 0, 0);
+
+      canvas.toBlob(blob => {
+        if (!blob) reject(new Error("Could not preprocess receipt image."));
+        else resolve(blob);
+      }, "image/png", 0.95);
+    };
+
+    image.onerror = reject;
+
+    if (typeof fileOrDataUrl === "string") {
+      image.src = fileOrDataUrl;
+    } else {
+      image.src = URL.createObjectURL(fileOrDataUrl);
+    }
+  });
+}
+
+function normalizeOCRText(text) {
+  return String(text || "")
+    .replace(/[|]/g, "I")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/\bT0TAL\b/gi, "TOTAL")
+    .replace(/\bTQTAL\b/gi, "TOTAL")
+    .replace(/\bSUBT0TAL\b/gi, "SUBTOTAL")
+    .replace(/\bAM0UNT\b/gi, "AMOUNT")
+    .replace(/\bH5T\b/gi, "HST")
+    .replace(/\bHSI\b/gi, "HST")
+    .replace(/\bG5T\b/gi, "GST")
+    .replace(/\bTAK\b/gi, "TAX");
+}
+
+
 function parseReceiptText(text) {
+  text = normalizeOCRText(text);
+
   const compact = text.replace(/\s+/g, " ").trim();
-  const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const lines = text
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => line.replace(/\s{2,}/g, " "));
 
-  const noise = /^(receipt|invoice|sale|debit|credit|visa|mastercard|interac|approved|thank|cashier|terminal|merchant|customer|copy|hst|gst|subtotal|total|tax|date|time|auth|change|balance|account|ref|aid|tvr|tsi|approved)/i;
+  const noise = /^(receipt|invoice|sale|debit|credit|visa|mastercard|interac|approved|thank|cashier|terminal|merchant|customer|copy|hst|gst|subtotal|total|tax|date|time|auth|change|balance|account|ref|aid|tvr|tsi|approved|store|transaction|trans|operator|clerk|cash|card|pin|purchase)/i;
 
-  let vendor = lines.find(line =>
-    line.length >= 2 &&
-    line.length <= 45 &&
-    !noise.test(line) &&
-    !/\d{4,}/.test(line)
-  ) || lines[0] || "";
+  let vendorCandidates = lines
+    .slice(0, 8)
+    .filter(line =>
+      line.length >= 2 &&
+      line.length <= 45 &&
+      !noise.test(line) &&
+      !/^\d+$/.test(line) &&
+      !/\d{4,}/.test(line) &&
+      !/@/.test(line)
+    );
 
+  let vendor = vendorCandidates[0] || lines[0] || "";
   vendor = vendor.replace(/[^a-zA-Z0-9 '&.-]/g, "").trim();
+
+  const monthMap = {
+    jan: "01", january: "01",
+    feb: "02", february: "02",
+    mar: "03", march: "03",
+    apr: "04", april: "04",
+    may: "05",
+    jun: "06", june: "06",
+    jul: "07", july: "07",
+    aug: "08", august: "08",
+    sep: "09", sept: "09", september: "09",
+    oct: "10", october: "10",
+    nov: "11", november: "11",
+    dec: "12", december: "12"
+  };
 
   const datePatterns = [
     {
@@ -630,12 +738,26 @@ function parseReceiptText(text) {
       format: match => `${match[1]}-${String(match[2]).padStart(2, "0")}-${String(match[3]).padStart(2, "0")}`
     },
     {
-      regex: /\b(0?[1-9]|[12]\d|3[01])[-\/.](0?[1-9]|1[0-2])[-\/.](20\d{2})\b/,
-      format: match => `${match[3]}-${String(match[2]).padStart(2, "0")}-${String(match[1]).padStart(2, "0")}`
+      regex: /\b(0?[1-9]|[12]\d|3[01])[-\/.](0?[1-9]|1[0-2])[-\/.](20\d{2}|\d{2})\b/,
+      format: match => {
+        const year = String(match[3]).length === 2 ? `20${match[3]}` : match[3];
+        return `${year}-${String(match[2]).padStart(2, "0")}-${String(match[1]).padStart(2, "0")}`;
+      }
     },
     {
-      regex: /\b(0?[1-9]|1[0-2])[-\/.](0?[1-9]|[12]\d|3[01])[-\/.](20\d{2})\b/,
-      format: match => `${match[3]}-${String(match[1]).padStart(2, "0")}-${String(match[2]).padStart(2, "0")}`
+      regex: /\b(0?[1-9]|1[0-2])[-\/.](0?[1-9]|[12]\d|3[01])[-\/.](20\d{2}|\d{2})\b/,
+      format: match => {
+        const year = String(match[3]).length === 2 ? `20${match[3]}` : match[3];
+        return `${year}-${String(match[1]).padStart(2, "0")}-${String(match[2]).padStart(2, "0")}`;
+      }
+    },
+    {
+      regex: /\b([A-Za-z]{3,9})\.?\s+(0?[1-9]|[12]\d|3[01]),?\s+(20\d{2})\b/i,
+      format: match => `${match[3]}-${monthMap[match[1].toLowerCase()] || "01"}-${String(match[2]).padStart(2, "0")}`
+    },
+    {
+      regex: /\b(0?[1-9]|[12]\d|3[01])\s+([A-Za-z]{3,9})\.?\s+(20\d{2})\b/i,
+      format: match => `${match[3]}-${monthMap[match[2].toLowerCase()] || "01"}-${String(match[1]).padStart(2, "0")}`
     }
   ];
 
@@ -648,14 +770,24 @@ function parseReceiptText(text) {
     }
   }
 
-  const toNumber = value => parseFloat(String(value).replace(/,/g, ""));
+  const toNumber = value => {
+    const cleaned = String(value).replace(/,/g, "").replace(/[^\d.]/g, "");
+    return parseFloat(cleaned);
+  };
+
+  function findMoneyNearKeywords(keywords) {
+    const pattern = new RegExp(`(?:${keywords})[^0-9$]{0,30}\\$?\\s*([0-9]+[.,][0-9]{2})`, "ig");
+    return [...text.matchAll(pattern)].map(match => toNumber(match[1])).filter(Boolean);
+  }
+
+  const totalCandidates = [
+    ...findMoneyNearKeywords("amount due|balance due|grand total|total due|total|purchase|paid"),
+  ];
 
   let amount = "";
-  const preferredAmountMatches = [...text.matchAll(/(?:amount due|balance due|grand total|total|purchase)\s*(?:cad|\$)?\s*[:\-]?\s*\$?\s*([0-9]+[.,][0-9]{2})/ig)]
-    .map(match => toNumber(match[1]));
 
-  if (preferredAmountMatches.length) {
-    amount = Math.max(...preferredAmountMatches);
+  if (totalCandidates.length) {
+    amount = Math.max(...totalCandidates);
   } else {
     const amounts = [...text.matchAll(/\$?\s*([0-9]+[.,][0-9]{2})/g)]
       .map(match => toNumber(match[1]))
@@ -664,13 +796,14 @@ function parseReceiptText(text) {
     if (amounts.length) amount = Math.max(...amounts);
   }
 
-  let hst = "";
-  const taxMatch =
-    text.match(/\b(?:hst|gst|tax)\b[^\d$]{0,16}\$?\s*([0-9]+[.,][0-9]{2})/i) ||
-    text.match(/\$?\s*([0-9]+[.,][0-9]{2})[^\n]{0,18}\b(?:hst|gst|tax)\b/i);
+  const taxCandidates = [
+    ...findMoneyNearKeywords("hst|gst|tax|tx"),
+    ...[...text.matchAll(/\$?\s*([0-9]+[.,][0-9]{2})[^\n]{0,22}\b(?:hst|gst|tax|tx)\b/ig)].map(match => toNumber(match[1])).filter(Boolean)
+  ];
 
-  if (taxMatch) {
-    hst = toNumber(taxMatch[1]);
+  let hst = "";
+  if (taxCandidates.length) {
+    hst = Math.max(...taxCandidates.filter(value => !amount || value < amount));
   } else if (amount) {
     hst = estimateHSTFromTotal(amount);
   }
@@ -728,28 +861,35 @@ async function runOCR() {
     return;
   }
 
-  $("ocrStatus").textContent = "Running OCR. This can take 10–30 seconds on iPhone...";
+  $("ocrStatus").textContent = "Improving receipt image for OCR...";
 
   try {
-    const result = await Tesseract.recognize(file || currentReceiptData, "eng", {
+    const preprocessedImage = await preprocessReceiptImage(file || currentReceiptData);
+
+    $("ocrStatus").textContent = "Running improved OCR. This can take 15–45 seconds on iPhone...";
+
+    const result = await Tesseract.recognize(preprocessedImage, "eng", {
       logger: message => {
         if (message.status) {
           const progress = message.progress ? ` ${Math.round(message.progress * 100)}%` : "";
           $("ocrStatus").textContent = `OCR: ${message.status}${progress}`;
         }
-      }
+      },
+      tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,:/-$%&'()# +",
+      preserve_interword_spaces: "1"
     });
 
-    const text = result.data.text || "";
+    const rawText = result.data.text || "";
+    const text = normalizeOCRText(rawText);
     const parsed = parseReceiptText(text);
 
     populateFromOCR(parsed, text);
     await checkDuplicate();
 
-    $("ocrStatus").textContent = "OCR finished. Fields were populated automatically.";
+    $("ocrStatus").textContent = "Improved OCR finished. Fields were populated automatically.";
   } catch (error) {
     console.error(error);
-    $("ocrStatus").textContent = "OCR failed. Try a clearer receipt photo or enter details manually.";
+    $("ocrStatus").textContent = "OCR failed. Try a brighter, flatter receipt photo or enter details manually.";
   }
 }
 
@@ -835,7 +975,7 @@ function clearForm() {
   $("notes").value = "";
   $("autofillBox").classList.add("hidden");
   $("duplicateBox").classList.add("hidden");
-  $("ocrStatus").textContent = "Upload a receipt, then tap Run Simple OCR.";
+  $("ocrStatus").textContent = "Upload a receipt, then tap Run Improved OCR.";
 
   $("category").value = "Other";
   updateSubcategories();
@@ -913,7 +1053,7 @@ async function renderDashboard() {
 
     <div class="card">
       <h2>Quick Start</h2>
-      <p class="small">Take or upload a receipt photo, run simple OCR, review the populated fields, then save.</p>
+      <p class="small">Take or upload a receipt photo, run improved OCR with image cleanup, review the populated fields, then save.</p>
       <button onclick="showTab('add')">Add Receipt Expense</button>
     </div>
   `;

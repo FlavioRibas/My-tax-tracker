@@ -1,32 +1,39 @@
-# Tax Tracker - Simple OCR App
+# Tax Tracker - Improved OCR Quality
 
-## Files
-Upload these files directly to the root of your GitHub repository:
+## Improvements
+This version improves receipt OCR quality by:
+
+- Resizing large receipt images before OCR
+- Converting image to grayscale
+- Increasing contrast
+- Applying dynamic black/white thresholding
+- Normalizing common OCR mistakes
+- Better vendor detection
+- Better date detection, including:
+  - YYYY-MM-DD
+  - DD/MM/YYYY
+  - MM/DD/YYYY
+  - Jan 15, 2026
+  - 15 Jan 2026
+- Better total amount detection
+- Better HST/GST/tax detection
+- HST estimate when tax is missing
+
+## Usage Tips
+For best OCR:
+- Put the receipt on a dark flat surface
+- Use bright light
+- Keep the phone parallel to the receipt
+- Avoid shadows and curled paper
+- Crop so the receipt fills most of the photo
+- Use a clear original receipt, not a blurry screenshot
+
+## Upload
+Upload these files directly to the GitHub repository root:
 
 - index.html
 - manifest.webmanifest
 - icon.png
 - README.md
 
-## Features
-- Uses your Tax Tracker icon
-- Simple receipt OCR using Tesseract.js
-- Auto-populates:
-  - Vendor
-  - Date
-  - Amount
-  - HST estimate
-  - Category
-  - Sub-category
-- Stores receipt image with the expense
-- Detects possible duplicates
-- Expense list
-- Receipt library
-- Annual tax report
-- CSV export
-- JSON backup/restore
-- No service worker, to avoid GitHub Pages/iPhone reload crashes
-
-## Notes
-OCR requires internet access because Tesseract.js is loaded from a CDN.
-Always review OCR results before saving.
+No service worker is included, to avoid GitHub Pages/iPhone reload crashes.
