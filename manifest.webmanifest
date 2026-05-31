@@ -1,5 +1,5 @@
 {
-  "name": "Tax Tracker Cloud",
+  "name": "Tax Tracker Cloud Storage",
   "short_name": "Tax Cloud",
   "start_url": "./index.html",
   "display": "standalone",

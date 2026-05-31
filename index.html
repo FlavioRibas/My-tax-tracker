@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#1b1209">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon.png">
-  <title>Tax Tracker Cloud</title>
+  <title>Tax Tracker Cloud Storage</title>
 
   <style>
     :root {
@@ -292,8 +292,8 @@
   <div class="header-inner">
     <img class="logo" src="icon.png" alt="Tax Tracker logo">
     <div>
-      <h1>Tax Tracker Cloud</h1>
-      <div class="subtitle">Firebase sync, Google Login, OCR receipts, reports, and backup</div>
+      <h1>Tax Tracker Cloud Storage</h1>
+      <div class="subtitle">Firebase sync, Google Login, Firebase Storage receipts, OCR, reports, and backup</div>
     </div>
   </div>
   <nav id="tabs"></nav>
@@ -418,23 +418,30 @@
     setDoc,
     serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+  import {
+    getStorage,
+    ref,
+    uploadString,
+    getDownloadURL
+  } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
 
   // STEP 1:
   // Replace these placeholder values with your Firebase project config.
   // Firebase Console > Project Settings > General > Your apps > Web app.
   const firebaseConfig = {
-  apiKey: "AIzaSyCs00UwE0ZDZ577E-1M11ZtvJPDySkx4WE",
-  authDomain: "tax-tracker-ed7fd.firebaseapp.com",
-  projectId: "tax-tracker-ed7fd",
-  storageBucket: "tax-tracker-ed7fd.firebasestorage.app",
-  messagingSenderId: "358740782214",
-  appId: "1:358740782214:web:ca678b425c36237b3eb507",
-  measurementId: "G-4HD8KW6174"
-};
+    apiKey: "AIzaSyCs00UwE0ZDZ577E-1M11ZtvJPDySkx4WE",
+    authDomain: "tax-tracker-ed7fd.firebaseapp.com",
+    projectId: "tax-tracker-ed7fd",
+    storageBucket: "tax-tracker-ed7fd.firebasestorage.app",
+    messagingSenderId: "358740782214",
+    appId: "1:358740782214:web:ca678b425c36237b3eb507",
+    measurementId: "G-4HD8KW6174"
+  };
 
   let app = null;
   let auth = null;
   let dbCloud = null;
+  let storageCloud = null;
   let currentUser = null;
   let firebaseReady = false;
 
@@ -455,6 +462,7 @@
       app = initializeApp(firebaseConfig);
       auth = getAuth(app);
       dbCloud = getFirestore(app);
+      storageCloud = getStorage(app);
       firebaseReady = true;
 
       getRedirectResult(auth).catch(error => {
@@ -465,7 +473,7 @@
       onAuthStateChanged(auth, user => {
         currentUser = user;
         if (user) {
-          setAuthStatus(`Signed in as <b>${user.email}</b>. Cloud sync is available.`);
+          setAuthStatus(`Signed in as <b>${user.email}</b>. Cloud sync and Firebase Storage receipt backup are available.`);
         } else {
           setAuthStatus("Not signed in. Sign in with Google to sync between iPhone and webpage.");
         }
@@ -510,14 +518,38 @@
       return false;
     }
 
-    const ref = doc(dbCloud, "users", currentUser.uid, "taxTracker", "main");
-    await setDoc(ref, {
+    const expensesForCloud = [];
+
+    for (const expense of data.expenses || []) {
+      const cleanExpense = { ...expense };
+
+      if (cleanExpense.receiptData && String(cleanExpense.receiptData).startsWith("data:image")) {
+        const receiptPath = `users/${currentUser.uid}/receipts/${cleanExpense.id || Date.now()}.png`;
+        const receiptRef = ref(storageCloud, receiptPath);
+
+        await uploadString(receiptRef, cleanExpense.receiptData, "data_url");
+
+        cleanExpense.receiptUrl = await getDownloadURL(receiptRef);
+        cleanExpense.receiptStoragePath = receiptPath;
+
+        delete cleanExpense.receiptData;
+      }
+
+      expensesForCloud.push(cleanExpense);
+    }
+
+    const refDoc = doc(dbCloud, "users", currentUser.uid, "taxTracker", "main");
+
+    await setDoc(refDoc, {
       ...data,
+      app: "Tax Tracker Cloud Storage",
+      version: "firebase-storage-receipts-v1",
+      expenses: expensesForCloud,
       updatedAt: serverTimestamp(),
       updatedBy: currentUser.email
     });
 
-    setAuthStatus(`Synced to cloud as <b>${currentUser.email}</b>.`);
+    setAuthStatus(`Synced to cloud as <b>${currentUser.email}</b>. Receipts saved to Firebase Storage.`);
     return true;
   };
 
@@ -596,6 +628,11 @@ function $(id) { return document.getElementById(id); }
 
 function money(value) {
   return Number(value || 0).toLocaleString("en-CA", { style: "currency", currency: "CAD" });
+}
+
+
+function receiptSource(expense) {
+  return expense.receiptData || expense.receiptUrl || "";
 }
 
 function today() {
@@ -1184,7 +1221,7 @@ function totals(expenses) {
     total: expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0),
     deductible: expenses.reduce((sum, expense) => sum + Number(expense.amount || 0) * Number(expense.businessUse || 100) / 100, 0),
     hst: expenses.reduce((sum, expense) => sum + Number(expense.hst || 0) * Number(expense.businessUse || 100) / 100, 0),
-    receipts: expenses.filter(expense => expense.receiptData).length
+    receipts: expenses.filter(expense => receiptSource(expense)).length
   };
 }
 
@@ -1251,7 +1288,7 @@ async function renderExpenses() {
               <td data-label="Category">${expense.category}<br><span class="small">${expense.subcategory}</span></td>
               <td data-label="Amount">${money(expense.amount)}<br><span class="small">Deductible: ${money(expense.amount * expense.businessUse / 100)}</span></td>
               <td data-label="HST">${money(expense.hst || 0)}</td>
-              <td data-label="Receipt">${expense.receiptData ? `<img class="thumb" src="${expense.receiptData}" onclick="openReceipt(${expense.id})">` : "—"}</td>
+              <td data-label="Receipt">${receiptSource(expense) ? `<img class="thumb" src="${receiptSource(expense)}" onclick="openReceipt(${expense.id})">` : "—"}</td>
               <td data-label="Actions">
                 <button class="secondary" onclick="editExpense(${expense.id})">Edit</button>
                 <button class="danger" onclick="deleteExpense(${expense.id})">Delete</button>
@@ -1267,20 +1304,20 @@ async function renderExpenses() {
 async function openReceipt(id) {
   const expenses = await getExpenses();
   const expense = expenses.find(item => item.id === id);
-  if (!expense || !expense.receiptData) return;
+  if (!expense || !receiptSource(expense)) return;
 
   const popup = window.open();
   popup.document.write(`
     <title>Receipt</title>
     <body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh;">
-      <img src="${expense.receiptData}" style="max-width:100%;height:auto;">
+      <img src="${receiptSource(expense)}" style="max-width:100%;height:auto;">
     </body>
   `);
 }
 
 async function renderReceipts() {
   const expenses = await getExpenses();
-  const receipts = expenses.filter(expense => expense.receiptData)
+  const receipts = expenses.filter(expense => receiptSource(expense))
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
   $("receipts").innerHTML = `
@@ -1290,7 +1327,7 @@ async function renderReceipts() {
       <div class="receipt-grid">
         ${receipts.map(expense => `
           <div class="receipt-card" onclick="openReceipt(${expense.id})">
-            <img src="${expense.receiptData}">
+            <img src="${receiptSource(expense)}">
             <div>
               <b>${expense.vendor || "Receipt"}</b><br>
               ${expense.date}<br>
@@ -1377,7 +1414,7 @@ async function exportExpensesCSV() {
     expense.businessUse,
     (expense.amount * expense.businessUse / 100).toFixed(2),
     expense.payment,
-    expense.receiptData ? "Yes" : "No",
+    receiptSource(expense) ? "Yes" : "No",
     expense.notes,
     expense.ocrText
   ].map(csvEscape).join(","));
@@ -1414,8 +1451,8 @@ async function exportReportCSV() {
 
 async function getAllAppData() {
   return {
-    app: "Tax Tracker Cloud",
-    version: "firebase-google-login-v1",
+    app: "Tax Tracker Cloud Storage",
+    version: "firebase-storage-receipts-v1",
     exportedAt: new Date().toISOString(),
     expenses: await getExpenses()
   };

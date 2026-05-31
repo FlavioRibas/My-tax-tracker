@@ -1,62 +1,47 @@
-# Tax Tracker Cloud - Firebase + Google Login
+# Tax Tracker Cloud Storage Update
 
-## What this version adds
+## What this update adds
 
-- Google Login
-- Firebase Firestore cloud sync
-- Sync iPhone and webpage
-- Manual Sync to Cloud
-- Manual Sync from Cloud
-- Auto-sync after saving an expense when signed in
-- Keeps improved OCR quality
-- Keeps receipt image storage inside the synced JSON data
-- Includes Firestore security rules
+- Firebase configuration is already inserted.
+- Google Login remains active.
+- Firestore stores expense records.
+- Firebase Storage stores receipt images.
+- Firestore no longer stores large base64 receipt images.
+- Auto-sync after saving remains active.
+- Manual Sync to Cloud / Sync from Cloud remains active.
+- Receipt images can sync across iPhone and webpage.
 
-## Files to upload to GitHub root
+## Upload to GitHub
+
+Upload these files directly to your GitHub repository root:
 
 - index.html
 - manifest.webmanifest
 - icon.png
 - README.md
 - firestore.rules
+- storage.rules
 
-## Firebase setup steps
+## Firebase Storage Setup
 
-1. Go to Firebase Console.
-2. Create a project.
-3. Add a Web App.
-4. Copy the Firebase config.
-5. Open index.html.
-6. Replace this placeholder block:
+In Firebase Console:
 
-```js
-const firebaseConfig = {
-  apiKey: "PASTE_YOUR_API_KEY_HERE",
-  authDomain: "PASTE_YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "PASTE_YOUR_PROJECT_ID",
-  storageBucket: "PASTE_YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "PASTE_YOUR_MESSAGING_SENDER_ID",
-  appId: "PASTE_YOUR_APP_ID"
-};
-```
+1. Go to Build > Storage.
+2. Click Get started.
+3. Choose production mode.
+4. Use the same region if available.
+5. Open Storage > Rules.
+6. Paste the rules from storage.rules.
+7. Publish.
 
-7. In Firebase Authentication, enable Google provider.
-8. In Firebase Authentication > Settings > Authorized domains, add:
-   - your GitHub Pages domain, for example: yourusername.github.io
+## Test
 
-9. In Firestore Database:
-   - Create database.
-   - Start in production mode.
-   - Add the rules from firestore.rules.
-
-## How sync works
-
-The app stores one cloud document here:
-
-users/{yourGoogleUserId}/taxTracker/main
-
-Only your signed-in Google user can read/write that document.
-
-## Note about receipt images
-
-Receipt images are stored in the synced JSON document as base64 strings. This is simple and works for personal use. For heavy usage, the next upgrade should move receipt images to Firebase Storage.
+1. Open the GitHub Pages app.
+2. Sign in with Google.
+3. Add an expense with a receipt photo.
+4. Save.
+5. Sync to Cloud.
+6. Check Firebase Storage for uploaded receipt.
+7. Open on iPhone or another browser.
+8. Sign in.
+9. Sync from Cloud.
