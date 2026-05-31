@@ -1,15 +1,16 @@
 {
-  "name": "Physio Tax & Receipt Tracker V4.3 Stable",
-  "short_name": "Tax V4.3",
+  "name": "Tax Tracker",
+  "short_name": "Tax Tracker",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f7faf9",
-  "theme_color": "#0f766e",
+  "background_color": "#130b04",
+  "theme_color": "#1b1209",
   "icons": [
     {
-      "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

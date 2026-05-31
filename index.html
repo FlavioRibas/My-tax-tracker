@@ -1,31 +1,1200 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f766e"><link rel="manifest" href="manifest.webmanifest"><title>Physio Tax & Receipt Tracker V4.3 Stable</title><style>:root{--primary:#0f766e;--bg:#f7faf9;--card:#fff;--text:#12211f;--muted:#64748b;--border:#d8e0df;--danger:#dc2626;--warn:#b45309;--ok:#15803d}*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}header{position:sticky;top:0;z-index:10;background:linear-gradient(135deg,var(--primary),#0e7490);color:#fff;padding:16px 14px 12px;box-shadow:0 2px 10px rgba(0,0,0,.12)}.header-inner{max-width:1120px;margin:auto}h1{font-size:21px;margin:0}.subtitle{font-size:13px;opacity:.9;margin-top:2px}nav{display:flex;gap:8px;overflow-x:auto;margin-top:12px}nav button{white-space:nowrap;width:auto;margin:0;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);color:white;padding:8px 12px;border-radius:999px;font-weight:700}nav button.active{background:white;color:var(--primary)}main{max-width:1120px;margin:auto;padding:14px}.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:15px;margin-bottom:14px;box-shadow:0 2px 8px rgba(15,23,42,.04)}h2{font-size:19px;margin:0 0 10px}h3{font-size:16px;margin:14px 0 8px}label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 5px;text-transform:uppercase;letter-spacing:.02em}input,select,textarea{width:100%;border:1px solid var(--border);border-radius:12px;background:white;padding:11px;font-size:16px}textarea{min-height:70px}button{width:100%;border:0;border-radius:12px;background:var(--primary);color:white;padding:11px;font-weight:800;margin-top:10px;font:inherit}button.secondary{background:white;color:var(--primary);border:1px solid var(--primary)}button.danger{background:var(--danger)}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{background:#f1f8f7;border:1px solid var(--border);border-radius:15px;padding:12px}.metric span{display:block;color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase}.metric b{display:block;font-size:21px;margin-top:5px}.hidden{display:none!important}.small{font-size:13px;color:var(--muted);line-height:1.4}.toolbar{display:flex;gap:8px;flex-wrap:wrap}.toolbar button{width:auto}table{width:100%;border-collapse:collapse;font-size:14px}th,td{border-bottom:1px solid var(--border);padding:8px;text-align:left;vertical-align:top}th{font-size:12px;color:var(--muted)}.thumb{width:56px;height:56px;object-fit:cover;border-radius:10px;border:1px solid var(--border);background:#f8fafc}.receipt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}.receipt-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:white}.receipt-card img{width:100%;height:160px;object-fit:cover;background:#f8fafc}.receipt-card div{padding:8px;font-size:13px}.ocrbox{border:1px dashed var(--border);background:#f8fafc;border-radius:14px;padding:12px;margin-top:10px}.ok{color:var(--ok)}.warn{color:var(--warn)}.notice{background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:12px;margin-top:10px}.notice b{color:#9a3412}.success{background:#ecfdf5;border:1px solid #bbf7d0;border-radius:14px;padding:12px;margin-top:10px}.success b{color:#166534}.badge{display:inline-block;background:#eef7f6;color:var(--primary);border:1px solid var(--border);border-radius:999px;padding:4px 8px;font-size:12px;font-weight:800}@media(max-width:760px){.grid,.grid3,.metrics{grid-template-columns:1fr}table,thead,tbody,tr,th,td{display:block}thead{display:none}tr{border:1px solid var(--border);border-radius:14px;margin-bottom:9px;padding:8px;background:white}td{border:0;padding:4px 0}td:before{content:attr(data-label) ": ";font-weight:800;color:var(--muted)}.toolbar button{width:100%}}</style></head><body><header><div class="header-inner"><h1>Physio Tax & Receipt Tracker</h1><div class="subtitle">V4.3 stable: manual OCR scan + reliable auto-fill</div><nav id="tabs"></nav></div></header><main><section id="dashboard" class="view"></section><section id="expense" class="view hidden"><div class="card"><h2>Add / Edit Expense</h2><div class="grid"><div><label>Date</label><input id="date" type="date"></div><div><label>Amount CAD</label><input id="amount" type="number" step="0.01" inputmode="decimal" placeholder="0.00" oninput="autoCalcHstIfMissing()"></div></div><div class="grid"><div><label>Vendor / Description</label><input id="vendor" placeholder="e.g., Staples, Petro Canada, College fee" oninput="suggestCategoryFromVendor()"></div><div><label>HST / Tax Paid</label><input id="hst" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div></div><div class="grid"><div><label>Category</label><select id="category"></select></div><div><label>Sub-category</label><select id="subcategory"></select></div></div><div class="grid"><div><label>Business Use %</label><input id="businessUse" type="number" min="0" max="100" step="1" value="100"></div><div><label>Payment Method</label><select id="payment"><option>Credit Card</option><option>Debit</option><option>Cash</option><option>E-transfer</option><option>Bank Payment</option><option>Other</option></select></div></div><label>Receipt Photo</label><input id="receiptFile" type="file" accept="image/*" capture="environment"><div id="receiptPreview" class="small" style="margin-top:8px"></div><div class="ocrbox"><button class="secondary" onclick="runOCR()">Scan Receipt & Auto-Fill Fields</button><div id="ocrStatus" class="small" style="margin-top:8px">Upload a clear receipt photo, then tap Scan Receipt & Auto-Fill Fields.</div></div><div id="autofillBox" class="success hidden"><b>Fields Populated</b><div id="autofillText" class="small" style="margin-top:6px"></div></div><div id="duplicateBox" class="notice hidden"><b>Possible Duplicate Found</b><div id="duplicateText" class="small" style="margin-top:6px"></div></div><label>Receipt OCR / Search Text</label><textarea id="ocrText" placeholder="OCR text appears here. You can edit it."></textarea><label>Notes</label><textarea id="notes" placeholder="Optional notes"></textarea><div class="toolbar"><button onclick="saveExpense()">Save Expense</button><button class="secondary" onclick="clearExpenseForm()">New / Clear</button></div></div></section><section id="expenses" class="view hidden"></section><section id="receipts" class="view hidden"></section><section id="vehicle" class="view hidden"></section><section id="homeoffice" class="view hidden"></section><section id="reports" class="view hidden"></section><section id="settings" class="view hidden"></section></main><script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script><script>
-const DB_NAME="physio-tax-receipt-tracker-v4-3-stable",DB_VER=1;let db,editId=null,activeTab="dashboard",currentReceiptData=null,duplicateWarning=null;const HST_RATE=0.13;const categories={"Revenue":["Physiotherapy Services","Consulting Services","Other Professional Income"],"Home Office":["Heat","Electricity","Water","Mortgage Interest","Rent","Property Taxes","Condo / Maintenance Fees","Home Insurance","Maintenance","Cleaning Supplies","Minor Repairs","Internet","Phone","Other Home Office"],"Vehicle":["Fuel & Oil","Electricity for EV","Vehicle Insurance","Supplementary Business Insurance","Registration Fees","License Fees","Maintenance & Repairs","Business Parking","Tolls","Lease Payments","Interest Charges","Other Vehicle"],"Office & Medical Supplies":["Stationery","General Office Supplies","Printing & Photos","Furniture","Decoration","Medical Supplies","Assessment Tools","Treatment Supplies"],"Professional Fees & Memberships":["College of Physiotherapists","Professional Association Dues","Professional Liability Insurance","Courses","Certifications","Seminars","Conferences","Accounting Fees","Tax Preparation Fees","Legal Fees","Consulting Fees"],"Travel":["Airfare","Train Tickets","Bus Tickets","Taxi / Uber","Hotels","Short-Term Rentals","Baggage Fees","Travel Incidentals"],"Meals & Entertainment":["Meals During Business Travel","Client Meals","Networking Events","Event Tickets","Room Rentals"],"Banking & Finance":["Monthly Fees","Transaction Fees","Interest Charges","Credit Card Processing Fees"],"Technology & Software":["Apps","Practice Management Software","Scheduling Software","Cloud Storage","Website Hosting","Domain Registration","Advertising","Social Media Advertising"],"Capital Assets":["Computers","Monitors","Printers","Hardware","Office Furniture","Medical Equipment","Appliances","Other Equipment"],"Clinic Rent":["Clinic Office Rental","Treatment Room Rental"]};
-const vendorRules=[[/staples|office depot|grand.*toy/i,"Office & Medical Supplies","General Office Supplies"],[/amazon|walmart|costco/i,"Office & Medical Supplies","General Office Supplies"],[/petro|esso|shell|ultramar|circle k|gas|fuel/i,"Vehicle","Fuel & Oil"],[/college of physiotherapists|physiotherapy association|cpa/i,"Professional Fees & Memberships","Professional Association Dues"],[/insurance|liability/i,"Professional Fees & Memberships","Professional Liability Insurance"],[/course|seminar|conference|training|certification|workshop/i,"Professional Fees & Memberships","Courses"],[/uber|lyft|taxi/i,"Travel","Taxi / Uber"],[/air canada|westjet|porter|hotel|inn|airbnb/i,"Travel","Hotels"],[/restaurant|cafe|coffee|tim hortons|starbucks|subway|pizza/i,"Meals & Entertainment","Meals During Business Travel"],[/rogers|bell|telus|fido|internet|phone/i,"Home Office","Internet"],[/google|apple|microsoft|adobe|dropbox|canva|quickbooks/i,"Technology & Software","Apps"],[/clinic|rental|rent|treatment room/i,"Clinic Rent","Treatment Room Rental"],[/law|legal|accounting|bookkeeping|tax/i,"Professional Fees & Memberships","Accounting Fees"]];
-const tabs=[["dashboard","Dashboard"],["expense","Add Expense"],["expenses","Expenses"],["receipts","Receipts"],["vehicle","Vehicle"],["homeoffice","Home Office"],["reports","Reports"],["settings","Settings"]];function $(id){return document.getElementById(id)}function money(n){return Number(n||0).toLocaleString("en-CA",{style:"currency",currency:"CAD"})}function today(){return new Date().toISOString().slice(0,10)}function year(){return new Date().getFullYear()}function uid(){return Date.now()+Math.random()}function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VER);req.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains("expenses"))d.createObjectStore("expenses",{keyPath:"id"});if(!d.objectStoreNames.contains("vehicle"))d.createObjectStore("vehicle",{keyPath:"id"});if(!d.objectStoreNames.contains("settings"))d.createObjectStore("settings",{keyPath:"key"})};req.onsuccess=e=>{db=e.target.result;resolve(db)};req.onerror=e=>reject(e)})}function store(n,m="readonly"){return db.transaction(n,m).objectStore(n)}function getAll(n){return new Promise((res,rej)=>{const r=store(n).getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=rej})}function put(n,o){return new Promise((res,rej)=>{const r=store(n,"readwrite").put(o);r.onsuccess=res;r.onerror=rej})}function del(n,id){return new Promise((res,rej)=>{const r=store(n,"readwrite").delete(id);r.onsuccess=res;r.onerror=rej})}function clearStore(n){return new Promise((res,rej)=>{const r=store(n,"readwrite").clear();r.onsuccess=res;r.onerror=rej})}function getSetting(k){return new Promise((res)=>{const r=store("settings").get(k);r.onsuccess=()=>res(r.result?.value);r.onerror=()=>res(null)})}function setSetting(k,v){return put("settings",{key:k,value:v})}
-function initTabs(){$("tabs").innerHTML=tabs.map(([id,n])=>`<button id="tab_${id}" onclick="showTab('${id}')">${n}</button>`).join("")}function showTab(id){activeTab=id;document.querySelectorAll(".view").forEach(v=>v.classList.add("hidden"));$(id).classList.remove("hidden");tabs.forEach(([tid])=>$("tab_"+tid).classList.toggle("active",tid===id));render()}function populateCategories(){$("category").innerHTML=Object.keys(categories).map(c=>`<option>${c}</option>`).join("");$("category").addEventListener("change",updateSubcategories);updateSubcategories()}function updateSubcategories(){const cat=$("category").value;$("subcategory").innerHTML=(categories[cat]||[]).map(s=>`<option>${s}</option>`).join("")}function categorySuggestion(vendor,text=""){const combined=(vendor+" "+text).toLowerCase();for(const[regex,cat,sub]of vendorRules){if(regex.test(combined))return{cat,sub}}return{cat:"Office & Medical Supplies",sub:"General Office Supplies"}}function suggestCategoryFromVendor(){const s=categorySuggestion($("vendor").value);$("category").value=s.cat;updateSubcategories();$("subcategory").value=s.sub}function estimateHstFromTotal(total){return total?total-(total/(1+HST_RATE)):0}function autoCalcHstIfMissing(){const amt=parseFloat($("amount").value||0);if(amt&&!$("hst").value){$("hst").value=estimateHstFromTotal(amt).toFixed(2)}}
-async function fileToDataURL(file){if(!file)return null;if(file.size>7*1024*1024){alert("Use a receipt photo under 7 MB.");return null}return await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(file)})}$("receiptFile").addEventListener("change",async()=>{
-  const f=$("receiptFile").files[0];
-  currentReceiptData=await fileToDataURL(f);
-  $("receiptPreview").innerHTML=f?`Selected: ${f.name} (${Math.round(f.size/1024)} KB)`:"";
-  if(currentReceiptData){
-    $("receiptPreview").innerHTML+=`<br><img class="thumb" src="${currentReceiptData}">`;
-    $("ocrStatus").innerHTML="Receipt loaded. Tap Scan Receipt & Auto-Fill Fields when ready.";
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1b1209">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon.png">
+  <title>Tax Tracker</title>
+
+  <style>
+    :root {
+      --bg: #130b04;
+      --card: #21140a;
+      --card2: #2c1a0d;
+      --text: #fff7ed;
+      --muted: #d6b48a;
+      --border: #6b3f1f;
+      --gold: #d18a35;
+      --gold2: #f0c176;
+      --danger: #dc2626;
+      --green: #16a34a;
+      --input: #fffaf3;
+      --inputText: #1b1209;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: linear-gradient(180deg, #0d0703, #1b1209);
+      color: var(--text);
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(19, 11, 4, 0.96);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 14px;
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 74px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .logo {
+      width: 74px;
+      height: 74px;
+      object-fit: contain;
+      border-radius: 14px;
+      background: #0d0703;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 26px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    nav {
+      max-width: 1100px;
+      margin: 10px auto 0;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 3px;
+    }
+
+    nav button {
+      width: auto;
+      margin: 0;
+      white-space: nowrap;
+      background: #2c1a0d;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 800;
+    }
+
+    nav button.active {
+      background: linear-gradient(135deg, var(--gold), var(--gold2));
+      color: #1b1209;
+      border-color: var(--gold2);
+    }
+
+    main {
+      max-width: 1100px;
+      margin: auto;
+      padding: 14px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--card), var(--card2));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+    }
+
+    h2 { margin: 0 0 12px; font-size: 21px; }
+    h3 { margin: 16px 0 8px; font-size: 17px; color: var(--gold2); }
+
+    label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin: 10px 0 5px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #c08a4a;
+      border-radius: 12px;
+      background: var(--input);
+      color: var(--inputText);
+      padding: 11px;
+      font-size: 16px;
+    }
+
+    textarea { min-height: 84px; }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--gold), var(--gold2));
+      color: #1b1209;
+      padding: 12px;
+      font: inherit;
+      font-weight: 900;
+      margin-top: 10px;
+    }
+
+    button.secondary {
+      background: transparent;
+      color: var(--gold2);
+      border: 1px solid var(--gold);
+    }
+
+    button.danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+
+    .metric {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 13px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      font-weight: 900;
+    }
+
+    .metric b {
+      display: block;
+      font-size: 22px;
+      margin-top: 6px;
+      color: white;
+    }
+
+    .hidden { display: none !important; }
+    .small { font-size: 13px; color: var(--muted); line-height: 1.45; }
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+    .toolbar button { width: auto; flex: 1; }
+
+    .ocrbox {
+      border: 1px dashed var(--gold);
+      background: rgba(255,255,255,0.05);
+      border-radius: 15px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+
+    .success {
+      border: 1px solid #22c55e;
+      background: rgba(22, 163, 74, 0.12);
+      border-radius: 15px;
+      padding: 12px;
+      margin-top: 10px;
+      color: #bbf7d0;
+    }
+
+    .warning {
+      border: 1px solid #f59e0b;
+      background: rgba(245, 158, 11, 0.12);
+      border-radius: 15px;
+      padding: 12px;
+      margin-top: 10px;
+      color: #fde68a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th { color: var(--muted); font-size: 12px; }
+
+    .thumb {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0d0703;
+    }
+
+    .receipt-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+    }
+
+    .receipt-card {
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .receipt-card img {
+      width: 100%;
+      height: 165px;
+      object-fit: cover;
+      background: #0d0703;
+    }
+
+    .receipt-card div { padding: 9px; font-size: 13px; }
+
+    @media(max-width: 760px) {
+      .header-inner { grid-template-columns: 62px 1fr; }
+      .logo { width: 62px; height: 62px; }
+      h1 { font-size: 22px; }
+      .grid, .grid3, .metrics { grid-template-columns: 1fr; }
+      .toolbar button { width: 100%; }
+      table, thead, tbody, tr, th, td { display: block; }
+      thead { display: none; }
+      tr {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 8px;
+        margin-bottom: 9px;
+        background: rgba(255,255,255,0.04);
+      }
+      td { border: 0; padding: 4px 0; }
+      td:before { content: attr(data-label) ": "; color: var(--muted); font-weight: 900; }
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="header-inner">
+    <img class="logo" src="icon.png" alt="Tax Tracker logo">
+    <div>
+      <h1>Tax Tracker</h1>
+      <div class="subtitle">Simple receipt OCR, expense tracking, reports, and backup</div>
+    </div>
+  </div>
+  <nav id="tabs"></nav>
+</header>
+
+<main>
+  <section id="dashboard" class="view"></section>
+
+  <section id="add" class="view hidden">
+    <div class="card">
+      <h2>Add Expense</h2>
+
+      <label>Receipt Photo</label>
+      <input id="receiptFile" type="file" accept="image/*" capture="environment">
+      <div id="receiptPreview" class="small" style="margin-top:8px;"></div>
+
+      <div class="ocrbox">
+        <button class="secondary" onclick="runOCR()">Run Simple OCR</button>
+        <div id="ocrStatus" class="small" style="margin-top:8px;">Upload a receipt, then tap Run Simple OCR.</div>
+      </div>
+
+      <div id="autofillBox" class="success hidden"></div>
+      <div id="duplicateBox" class="warning hidden"></div>
+
+      <div class="grid">
+        <div>
+          <label>Date</label>
+          <input id="date" type="date">
+        </div>
+        <div>
+          <label>Amount</label>
+          <input id="amount" type="number" step="0.01" inputmode="decimal" oninput="estimateHSTIfBlank()">
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>Vendor</label>
+          <input id="vendor" placeholder="Vendor name" oninput="suggestCategory()">
+        </div>
+        <div>
+          <label>HST / Tax</label>
+          <input id="hst" type="number" step="0.01" inputmode="decimal">
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>Category</label>
+          <select id="category"></select>
+        </div>
+        <div>
+          <label>Sub-Category</label>
+          <select id="subcategory"></select>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>Business Use %</label>
+          <input id="businessUse" type="number" value="100" min="0" max="100">
+        </div>
+        <div>
+          <label>Payment Method</label>
+          <select id="payment">
+            <option>Credit Card</option>
+            <option>Debit</option>
+            <option>Cash</option>
+            <option>E-transfer</option>
+            <option>Bank Payment</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <label>OCR Text / Notes</label>
+      <textarea id="ocrText" placeholder="OCR text appears here. You can edit this."></textarea>
+
+      <label>Additional Notes</label>
+      <textarea id="notes" placeholder="Optional notes"></textarea>
+
+      <div class="toolbar">
+        <button onclick="saveExpense()">Save Expense</button>
+        <button class="secondary" onclick="clearForm()">Clear</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="expenses" class="view hidden"></section>
+  <section id="receipts" class="view hidden"></section>
+  <section id="reports" class="view hidden"></section>
+  <section id="backup" class="view hidden"></section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<script>
+const DB_NAME = "tax-tracker-simple-ocr-v1";
+const DB_VERSION = 1;
+const HST_RATE = 0.13;
+
+let db;
+let activeTab = "dashboard";
+let editId = null;
+let currentReceiptData = null;
+let currentReceiptName = "";
+
+const tabs = [
+  ["dashboard", "Dashboard"],
+  ["add", "Add Expense"],
+  ["expenses", "Expenses"],
+  ["receipts", "Receipts"],
+  ["reports", "Reports"],
+  ["backup", "Backup"]
+];
+
+const categories = {
+  "Home Office": ["Heat", "Electricity", "Water", "Internet", "Phone", "Rent", "Mortgage Interest", "Property Taxes", "Insurance", "Maintenance", "Cleaning Supplies", "Other Home Office"],
+  "Vehicle": ["Fuel & Oil", "EV Charging", "Insurance", "Registration", "Maintenance & Repairs", "Parking", "Tolls", "Other Vehicle"],
+  "Office & Medical Supplies": ["General Office Supplies", "Printing & Photos", "Medical Supplies", "Treatment Supplies", "Assessment Tools", "Furniture", "Decoration"],
+  "Professional Fees & Memberships": ["College Fees", "Professional Association Dues", "Professional Liability Insurance", "Courses", "Seminars", "Conferences", "Accounting Fees", "Tax Preparation Fees", "Legal Fees"],
+  "Travel": ["Airfare", "Train", "Bus", "Taxi / Uber", "Hotel", "Baggage", "Other Travel"],
+  "Meals & Entertainment": ["Business Meals", "Meals During Travel", "Networking Events", "Hospitality"],
+  "Technology & Software": ["Apps", "Practice Management Software", "Cloud Storage", "Website Hosting", "Domain", "Advertising"],
+  "Banking & Finance": ["Monthly Fees", "Transaction Fees", "Interest Charges", "Credit Card Fees"],
+  "Clinic Rent": ["Clinic Office Rental", "Treatment Room Rental"],
+  "Capital Assets": ["Computer", "Printer", "Hardware", "Office Furniture", "Medical Equipment", "Other Equipment"],
+  "Other": ["Other Expense"]
+};
+
+const vendorRules = [
+  [/staples|office depot|grand.*toy|amazon|walmart|costco/i, "Office & Medical Supplies", "General Office Supplies"],
+  [/physio|medical|therapy|rehab|clinic supply/i, "Office & Medical Supplies", "Medical Supplies"],
+  [/petro|esso|shell|ultramar|circle k|gas|fuel|chargepoint/i, "Vehicle", "Fuel & Oil"],
+  [/college of physiotherapists|professional association|cpa/i, "Professional Fees & Memberships", "Professional Association Dues"],
+  [/insurance|liability/i, "Professional Fees & Memberships", "Professional Liability Insurance"],
+  [/course|seminar|conference|training|certification|workshop/i, "Professional Fees & Memberships", "Courses"],
+  [/uber|lyft|taxi/i, "Travel", "Taxi / Uber"],
+  [/air canada|westjet|porter|hotel|inn|airbnb/i, "Travel", "Hotel"],
+  [/restaurant|cafe|coffee|tim hortons|starbucks|subway|pizza|mcdonald/i, "Meals & Entertainment", "Business Meals"],
+  [/rogers|bell|telus|fido|internet|phone/i, "Home Office", "Internet"],
+  [/google|apple|microsoft|adobe|dropbox|canva|quickbooks|notion|zoom/i, "Technology & Software", "Apps"],
+  [/clinic|rental|rent|treatment room/i, "Clinic Rent", "Treatment Room Rental"],
+  [/law|legal|accounting|bookkeeping|tax/i, "Professional Fees & Memberships", "Accounting Fees"]
+];
+
+function $(id) { return document.getElementById(id); }
+
+function money(value) {
+  return Number(value || 0).toLocaleString("en-CA", { style: "currency", currency: "CAD" });
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function currentYear() {
+  return new Date().getFullYear();
+}
+
+function uid() {
+  return Date.now() + Math.random();
+}
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = event => {
+      const database = event.target.result;
+      if (!database.objectStoreNames.contains("expenses")) {
+        database.createObjectStore("expenses", { keyPath: "id" });
+      }
+    };
+
+    request.onsuccess = event => {
+      db = event.target.result;
+      resolve(db);
+    };
+
+    request.onerror = event => reject(event);
+  });
+}
+
+function expenseStore(mode = "readonly") {
+  return db.transaction("expenses", mode).objectStore("expenses");
+}
+
+function getExpenses() {
+  return new Promise((resolve, reject) => {
+    const request = expenseStore().getAll();
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = reject;
+  });
+}
+
+function putExpense(expense) {
+  return new Promise((resolve, reject) => {
+    const request = expenseStore("readwrite").put(expense);
+    request.onsuccess = resolve;
+    request.onerror = reject;
+  });
+}
+
+function deleteExpenseById(id) {
+  return new Promise((resolve, reject) => {
+    const request = expenseStore("readwrite").delete(id);
+    request.onsuccess = resolve;
+    request.onerror = reject;
+  });
+}
+
+function clearExpenses() {
+  return new Promise((resolve, reject) => {
+    const request = expenseStore("readwrite").clear();
+    request.onsuccess = resolve;
+    request.onerror = reject;
+  });
+}
+
+function initTabs() {
+  $("tabs").innerHTML = tabs.map(([id, label]) =>
+    `<button id="tab_${id}" onclick="showTab('${id}')">${label}</button>`
+  ).join("");
+}
+
+function showTab(id) {
+  activeTab = id;
+  document.querySelectorAll(".view").forEach(view => view.classList.add("hidden"));
+  $(id).classList.remove("hidden");
+  tabs.forEach(([tabId]) => $("tab_" + tabId).classList.toggle("active", tabId === id));
+  render();
+}
+
+function initCategories() {
+  $("category").innerHTML = Object.keys(categories).map(category =>
+    `<option>${category}</option>`
+  ).join("");
+
+  $("category").addEventListener("change", updateSubcategories);
+  updateSubcategories();
+}
+
+function updateSubcategories() {
+  const category = $("category").value;
+  $("subcategory").innerHTML = (categories[category] || []).map(sub =>
+    `<option>${sub}</option>`
+  ).join("");
+}
+
+function getCategorySuggestion(vendor, text = "") {
+  const combined = `${vendor || ""} ${text || ""}`;
+  for (const [pattern, category, subcategory] of vendorRules) {
+    if (pattern.test(combined)) return { category, subcategory };
+  }
+  return { category: "Other", subcategory: "Other Expense" };
+}
+
+function suggestCategory() {
+  const suggestion = getCategorySuggestion($("vendor").value, $("ocrText").value);
+  $("category").value = suggestion.category;
+  updateSubcategories();
+  $("subcategory").value = suggestion.subcategory;
+}
+
+function estimateHSTFromTotal(total) {
+  return total ? total - (total / (1 + HST_RATE)) : 0;
+}
+
+function estimateHSTIfBlank() {
+  const amount = parseFloat($("amount").value || 0);
+  if (amount && !$("hst").value) {
+    $("hst").value = estimateHSTFromTotal(amount).toFixed(2);
+  }
+}
+
+function setField(id, value) {
+  if (value !== undefined && value !== null && value !== "") {
+    const element = $(id);
+    element.value = value;
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+}
+
+async function fileToDataURL(file) {
+  if (!file) return null;
+
+  if (file.size > 7 * 1024 * 1024) {
+    alert("Please use a receipt image under 7 MB.");
+    return null;
+  }
+
+  return await new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(file);
+  });
+}
+
+$("receiptFile").addEventListener("change", async () => {
+  const file = $("receiptFile").files[0];
+  currentReceiptData = await fileToDataURL(file);
+  currentReceiptName = file ? file.name : "";
+
+  $("receiptPreview").innerHTML = file
+    ? `Selected: ${file.name} (${Math.round(file.size / 1024)} KB)`
+    : "";
+
+  if (currentReceiptData) {
+    $("receiptPreview").innerHTML += `<br><img class="thumb" src="${currentReceiptData}" alt="receipt preview">`;
+    $("ocrStatus").textContent = "Receipt loaded. Tap Run Simple OCR.";
   }
 });
-function setField(id,value){if(value!==undefined&&value!==null&&value!=="")$(id).value=value}function populateFieldsFromOCR(parsed,text){setField("vendor",parsed.vendor);setField("date",parsed.date);if(parsed.total)setField("amount",Number(parsed.total).toFixed(2));if(parsed.hst)setField("hst",Number(parsed.hst).toFixed(2));else if(parsed.total)setField("hst",estimateHstFromTotal(Number(parsed.total)).toFixed(2));const suggestion=categorySuggestion(parsed.vendor||"",text||"");$("category").value=suggestion.cat;updateSubcategories();$("subcategory").value=suggestion.sub;$("ocrText").value=text||"";$("autofillBox").classList.remove("hidden");$("autofillText").innerHTML=`Vendor: <b>${$("vendor").value||"Not found"}</b><br>Date: <b>${$("date").value||"Not found"}</b><br>Amount: <b>${$("amount").value?money($("amount").value):"Not found"}</b><br>HST: <b>${$("hst").value?money($("hst").value):"Not found"}</b><br>Category: <b>${$("category").value}</b><br>Sub-category: <b>${$("subcategory").value}</b><br><br>Please review, adjust if needed, then tap Save Expense.`}
-function parseReceiptText(text){const clean=text.replace(/\s+/g," ").trim();const lines=text.split(/
-?
-/).map(x=>x.trim()).filter(Boolean);const noise=/^(receipt|invoice|sale|debit|credit|visa|mastercard|interac|approved|thank|cashier|terminal|merchant|customer|copy|hst|gst|subtotal|total|tax|date|time|auth|change|balance|account|ref|aid|tvr|tsi)/i;let vendor=(lines.find(l=>l.length>2&&l.length<45&&!noise.test(l)&&!/\d{4,}/.test(l))||lines[0]||"").replace(/[^a-zA-Z0-9 '&.-]/g,"").trim();const datePatterns=[{r:/(20\d{2})[-\/.](0?[1-9]|1[0-2])[-\.\/](0?[1-9]|[12]\d|3[01])/,f:m=>`${m[1]}-${String(m[2]).padStart(2,"0")}-${String(m[3]).padStart(2,"0")}`},{r:/(0?[1-9]|[12]\d|3[01])[-\/.](0?[1-9]|1[0-2])[-\.\/](20\d{2})/,f:m=>`${m[3]}-${String(m[2]).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`},{r:/(0?[1-9]|1[0-2])[-\/.](0?[1-9]|[12]\d|3[01])[-\.\/](20\d{2})/,f:m=>`${m[3]}-${String(m[1]).padStart(2,"0")}-${String(m[2]).padStart(2,"0")}`}];let date="";for(const p of datePatterns){const m=clean.match(p.r);if(m){date=p.f(m);break}}function num(s){return parseFloat(String(s).replace(/,/g,""))}let total="";const preferred=[...text.matchAll(/(?:amount due|balance due|grand total|total|purchase)\s*(?:cad|\$)?\s*[:\-]?\s*\$?\s*([0-9]+[.,][0-9]{2})/ig)].map(m=>num(m[1]));if(preferred.length)total=Math.max(...preferred);else{const amounts=[...text.matchAll(/\$?\s*([0-9]+[.,][0-9]{2})/g)].map(m=>num(m[1])).filter(n=>n>0&&n<100000);if(amounts.length)total=Math.max(...amounts)}let hst="";const taxMatch=text.match(/(?:hst|gst|tax)[^\d$]{0,16}\$?\s*([0-9]+[.,][0-9]{2})/i)||text.match(/\$?\s*([0-9]+[.,][0-9]{2})[^
-]{0,18}(?:hst|gst|tax)/i);if(taxMatch)hst=num(taxMatch[1]);else if(total)hst=estimateHstFromTotal(total);return{vendor,date,total,hst}}
-async function runOCR(){const file=$("receiptFile").files[0];if(!file&&!currentReceiptData){alert("Please upload a receipt photo first.");return}if(!window.Tesseract){$("ocrStatus").innerHTML="<span class='warn'>OCR library not loaded. Check internet connection for first OCR use.</span>";return}$("ocrStatus").innerHTML="Scanning receipt and preparing auto-fill...";try{const result=await Tesseract.recognize(file||currentReceiptData,"eng",{logger:m=>{if(m.status)$("ocrStatus").innerHTML=`OCR: ${m.status} ${m.progress?Math.round(m.progress*100)+'%':''}`;}});const text=result.data.text||"";const parsed=parseReceiptText(text);populateFieldsFromOCR(parsed,text);await checkDuplicates();$("ocrStatus").innerHTML=`<span class="ok">OCR complete.</span> Fields were populated automatically. Review them, then tap Save Expense.`}catch(err){$("ocrStatus").innerHTML="<span class='warn'>OCR failed. Try a clearer photo or enter details manually.</span>";console.error(err)}}
-async function checkDuplicates(){const vendor=($("vendor").value||"").toLowerCase().trim();const date=$("date").value;const amount=parseFloat($("amount").value||0);duplicateWarning=null;$("duplicateBox").classList.add("hidden");if(!vendor||!date||!amount)return;const rows=await getAll("expenses");const dup=rows.find(e=>e.id!==editId&&e.date===date&&Math.abs(Number(e.amount||0)-amount)<0.01&&String(e.vendor||"").toLowerCase().trim()===vendor);if(dup){duplicateWarning=dup;$("duplicateBox").classList.remove("hidden");$("duplicateText").innerHTML=`Existing entry: ${dup.date} • ${dup.vendor} • ${money(dup.amount)} • ${dup.category}. Review before saving.`}}
-async function saveExpense(){await checkDuplicates();if(duplicateWarning&&!confirm("This looks like a duplicate receipt/expense. Save anyway?"))return;const file=$("receiptFile").files[0];const receiptData=currentReceiptData||(file?await fileToDataURL(file):null);const existing=editId?(await getAll("expenses")).find(x=>x.id===editId):{};const item={id:editId||uid(),date:$("date").value||today(),amount:parseFloat($("amount").value||0),hst:parseFloat($("hst").value||0),vendor:$("vendor").value.trim(),category:$("category").value,subcategory:$("subcategory").value,businessUse:parseFloat($("businessUse").value||100),payment:$("payment").value,receiptData:receiptData||existing.receiptData||null,receiptName:file?.name||existing.receiptName||"",receiptType:file?.type||existing.receiptType||"",ocrText:$("ocrText").value.trim(),notes:$("notes").value.trim(),updatedAt:new Date().toISOString()};if(!item.amount&&item.category!=="Revenue"){alert("Enter an amount.");return}await put("expenses",item);clearExpenseForm();alert("Saved.");showTab("expenses")}function clearExpenseForm(){editId=null;currentReceiptData=null;duplicateWarning=null;$("date").value=today();$("amount").value="";$("hst").value="";$("vendor").value="";$("businessUse").value="100";$("payment").value="Credit Card";$("receiptFile").value="";$("receiptPreview").innerHTML="";$("ocrText").value="";$("notes").value="";$("category").value="Revenue";updateSubcategories();$("ocrStatus").innerHTML="Upload a clear receipt photo, then tap Scan Receipt & Auto-Fill Fields.";$("duplicateBox").classList.add("hidden");$("autofillBox").classList.add("hidden")}async function editExpense(id){const e=(await getAll("expenses")).find(x=>x.id===id);if(!e)return;editId=id;currentReceiptData=e.receiptData;showTab("expense");$("date").value=e.date;$("amount").value=e.amount;$("hst").value=e.hst||"";$("vendor").value=e.vendor||"";$("category").value=e.category;updateSubcategories();$("subcategory").value=e.subcategory;$("businessUse").value=e.businessUse;$("payment").value=e.payment||"Credit Card";$("ocrText").value=e.ocrText||"";$("notes").value=e.notes||"";$("receiptPreview").innerHTML=e.receiptData?`Existing receipt attached.<br><img class="thumb" src="${e.receiptData}">`:"No receipt attached.";window.scrollTo({top:0,behavior:"smooth"})}async function deleteExpense(id){if(confirm("Delete this expense and its receipt?")){await del("expenses",id);render()}}
-function byYear(rows,y){return rows.filter(e=>e.date?.startsWith(String(y)))}function byMonth(rows,ym){return rows.filter(e=>e.date?.startsWith(ym))}function totals(rows){return{count:rows.length,total:rows.reduce((s,e)=>s+Number(e.amount||0),0),ded:rows.reduce((s,e)=>s+Number(e.amount||0)*Number(e.businessUse||100)/100,0),hst:rows.reduce((s,e)=>s+Number(e.hst||0)*Number(e.businessUse||100)/100,0),receipts:rows.filter(e=>e.receiptData).length}}function monthKey(d){return d.slice(0,7)}async function renderDashboard(){const rows=await getAll("expenses");const y=String(year());const currentMonth=today().slice(0,7);const yt=totals(byYear(rows,y));const mt=totals(byMonth(rows,currentMonth));const months={};byYear(rows,y).forEach(e=>{const m=monthKey(e.date);months[m]=months[m]||[];months[m].push(e)});$("dashboard").innerHTML=`<div class="metrics"><div class="metric"><span>This Month</span><b>${money(mt.total)}</b></div><div class="metric"><span>Monthly HST</span><b>${money(mt.hst)}</b></div><div class="metric"><span>${y} Deductible</span><b>${money(yt.ded)}</b></div><div class="metric"><span>Receipts</span><b>${yt.receipts}/${yt.count}</b></div></div><div class="card"><h2>Monthly Tax Dashboard</h2>${Object.keys(months).sort().reverse().map(m=>{const t=totals(months[m]);return`<p><span class="badge">${m}</span> Total: <b>${money(t.total)}</b> • Deductible: <b>${money(t.ded)}</b> • HST: <b>${money(t.hst)}</b> • Receipts: ${t.receipts}/${t.count}</p>`}).join("")||"<p class='small'>No expenses yet.</p>"}</div><div class="card"><h2>V4.1 Auto-Fill</h2><p class="small">After OCR, the app automatically fills vendor, date, amount, HST, category, sub-category, and receipt text. Review the populated fields, then save.</p><button onclick="showTab('expense')">Add Expense + Scan Receipt</button></div>`}
-function filterExpenses(rows){const y=$("reportYear")?.value||String(year());const q=($("search")?.value||"").toLowerCase();const cat=$("catFilter")?.value||"";return rows.filter(e=>(!y||e.date.startsWith(y))&&(!cat||e.category===cat)&&(!q||JSON.stringify(e).toLowerCase().includes(q)))}async function renderExpenses(){const all=await getAll("expenses");$("expenses").innerHTML=`<div class="card"><h2>Expense List</h2><div class="grid3"><div><label>Year</label><input id="reportYear" type="number" value="${year()}" onchange="render()"></div><div><label>Category</label><select id="catFilter" onchange="render()"><option value="">All</option>${Object.keys(categories).map(c=>`<option>${c}</option>`).join("")}</select></div><div><label>Search</label><input id="search" placeholder="vendor, OCR text, category" oninput="render()"></div></div><div id="expensesTable" style="margin-top:12px"></div></div>`;const rows=filterExpenses(all).sort((a,b)=>String(b.date).localeCompare(String(a.date)));const t=totals(rows);$("expensesTable").innerHTML=`<p class="small">${rows.length} items • ${money(t.total)} • HST ${money(t.hst)}</p>`+(!rows.length?`<p class="small">No expenses found.</p>`:`<table><thead><tr><th>Date</th><th>Vendor</th><th>Category</th><th>Amount</th><th>HST</th><th>Receipt</th><th>Actions</th></tr></thead><tbody>${rows.map(e=>`<tr><td data-label="Date">${e.date}</td><td data-label="Vendor">${e.vendor||""}</td><td data-label="Category">${e.category}<br><span class="small">${e.subcategory||""}</span></td><td data-label="Amount">${money(e.amount)}<br><span class="small">Deductible: ${money(e.amount*e.businessUse/100)}</span></td><td data-label="HST">${money(e.hst||0)}</td><td data-label="Receipt">${e.receiptData?`<img class="thumb" src="${e.receiptData}" onclick="openReceipt(${e.id})">`:"—"}</td><td data-label="Actions"><button class="secondary" onclick="editExpense(${e.id})">Edit</button><button class="danger" onclick="deleteExpense(${e.id})">Delete</button></td></tr>`).join("")}</tbody></table>`)}async function openReceipt(id){const e=(await getAll("expenses")).find(x=>x.id===id);if(!e?.receiptData)return;const w=window.open();w.document.write(`<title>Receipt</title><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${e.receiptData}" style="max-width:100%;height:auto"></body>`)}async function renderReceipts(){const rows=(await getAll("expenses")).filter(e=>e.receiptData).sort((a,b)=>String(b.date).localeCompare(String(a.date)));$("receipts").innerHTML=`<div class="card"><h2>Receipt Library</h2><p class="small">Duplicate detection checks vendor + date + amount when saving.</p><div class="receipt-grid">${rows.map(e=>`<div class="receipt-card" onclick="openReceipt(${e.id})"><img src="${e.receiptData}"><div><b>${e.vendor||"Receipt"}</b><br>${e.date}<br>${money(e.amount)}<br><span class="small">${e.category}</span></div></div>`).join("")||`<p class="small">No receipts attached yet.</p>`}</div></div>`}
-async function renderVehicle(){const rows=await getAll("vehicle");const y=String(year());const yr=rows.filter(r=>r.date?.startsWith(y));const business=yr.reduce((s,r)=>s+Number(r.businessKm||0),0),total=yr.reduce((s,r)=>s+Number(r.totalKm||0),0),pct=total?business/total*100:0;$("vehicle").innerHTML=`<div class="card"><h2>Vehicle Log</h2><div class="grid3"><div><label>Date</label><input id="vDate" type="date" value="${today()}"></div><div><label>Business KM</label><input id="vBusiness" type="number" step="0.1"></div><div><label>Total KM</label><input id="vTotal" type="number" step="0.1"></div></div><label>Trip / Purpose</label><input id="vPurpose" placeholder="Clinic visit, client appointment, supplies"><button onclick="saveVehicle()">Save Vehicle Entry</button></div><div class="metrics"><div class="metric"><span>${y} Business KM</span><b>${business.toFixed(1)}</b></div><div class="metric"><span>${y} Total KM</span><b>${total.toFixed(1)}</b></div><div class="metric"><span>Business Use</span><b>${pct.toFixed(1)}%</b></div><div class="metric"><span>Entries</span><b>${yr.length}</b></div></div>`}async function saveVehicle(){await put("vehicle",{id:uid(),date:$("vDate").value||today(),businessKm:parseFloat($("vBusiness").value||0),totalKm:parseFloat($("vTotal").value||0),purpose:$("vPurpose").value.trim()});renderVehicle()}
-async function renderHomeOffice(){const s=await getSetting("homeOffice")||{};const total=["heat","electricity","water","insurance","maintenance","rentMortgage","propertyTax","condo"].reduce((a,k)=>a+Number(s[k]||0),0);const pct=s.homeSqft?Number(s.officeSqft||0)/Number(s.homeSqft||1)*100:0;$("homeoffice").innerHTML=`<div class="card"><h2>Home Office Calculator</h2><div class="grid"><div><label>Office Square Feet</label><input id="officeSqft" type="number" value="${s.officeSqft||""}"></div><div><label>Total Home Square Feet</label><input id="homeSqft" type="number" value="${s.homeSqft||""}"></div></div><div class="grid">${["heat","electricity","water","insurance","maintenance","rentMortgage","propertyTax","condo"].map(k=>`<div><label>${k}</label><input id="ho_${k}" type="number" step="0.01" value="${s[k]||""}"></div>`).join("")}</div><button onclick="saveHomeOffice()">Save Calculator</button></div><div class="metrics"><div class="metric"><span>Home Office %</span><b>${pct.toFixed(2)}%</b></div><div class="metric"><span>Annual Costs</span><b>${money(total)}</b></div><div class="metric"><span>Deductible</span><b>${money(total*pct/100)}</b></div></div>`}async function saveHomeOffice(){const keys=["heat","electricity","water","insurance","maintenance","rentMortgage","propertyTax","condo"];const s={officeSqft:$("officeSqft").value,homeSqft:$("homeSqft").value};keys.forEach(k=>s[k]=$("ho_"+k).value);await setSetting("homeOffice",s);renderHomeOffice()}
-async function renderReports(){const rows=await getAll("expenses");const y=String(year());const yr=byYear(rows,y);const byCat={};yr.forEach(e=>{byCat[e.category]=byCat[e.category]||[];byCat[e.category].push(e)});const total=totals(yr);$("reports").innerHTML=`<div class="card"><h2>Annual CRA Tax Report - ${y}</h2><div class="metrics"><div class="metric"><span>Total Expenses</span><b>${money(total.total)}</b></div><div class="metric"><span>Deductible</span><b>${money(total.ded)}</b></div><div class="metric"><span>HST Tracked</span><b>${money(total.hst)}</b></div><div class="metric"><span>Receipts</span><b>${total.receipts}/${total.count}</b></div></div><h3>By Category</h3><table><thead><tr><th>Category</th><th>Total</th><th>Deductible</th><th>HST</th><th>Receipts</th></tr></thead><tbody>${Object.keys(byCat).map(c=>{const t=totals(byCat[c]);return`<tr><td data-label="Category">${c}</td><td data-label="Total">${money(t.total)}</td><td data-label="Deductible">${money(t.ded)}</td><td data-label="HST">${money(t.hst)}</td><td data-label="Receipts">${t.receipts}/${t.count}</td></tr>`}).join("")}</tbody></table></div><div class="card"><h2>Export / Cloud Backup</h2><p class="small">Use Backup Full App JSON for full data including receipt images. On iPhone, tap Share Backup to save to iCloud Drive or Google Drive.</p><div class="toolbar"><button onclick="exportExpensesCSV()">Export Expenses CSV</button><button class="secondary" onclick="exportVehicleCSV()">Export Vehicle CSV</button><button class="secondary" onclick="exportCRAReportCSV()">Export CRA Report CSV</button><button class="secondary" onclick="exportFullJSON(false)">Backup Full App JSON</button><button class="secondary" onclick="exportFullJSON(true)">Share Backup to Cloud</button></div><label>Restore Full App JSON</label><input type="file" accept=".json" onchange="importFullJSON(event)"></div>`}function csvEscape(v){return`"${String(v??"").replace(/"/g,'""')}"`}function download(n,c,t){const b=new Blob([c],{type:t});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=n;a.click()}async function exportExpensesCSV(){const rows=await getAll("expenses");const header=["Date","Vendor","Amount","HST","Category","Subcategory","Business Use %","Deductible Amount","Payment","Has Receipt","OCR Text","Notes"];const lines=[header.join(",")].concat(rows.map(e=>[e.date,e.vendor,e.amount,e.hst,e.category,e.subcategory,e.businessUse,(e.amount*e.businessUse/100).toFixed(2),e.payment,e.receiptData?"Yes":"No",e.ocrText,e.notes].map(csvEscape).join(",")));download("physio-expenses-v4-1.csv",lines.join("
-"),"text/csv")}async function exportCRAReportCSV(){const rows=byYear(await getAll("expenses"),year());const byCat={};rows.forEach(e=>{byCat[e.category]=byCat[e.category]||[];byCat[e.category].push(e)});const lines=["Category,Total,Deductible,HST,Receipt Count,Entry Count"].concat(Object.keys(byCat).map(c=>{const t=totals(byCat[c]);return[c,t.total.toFixed(2),t.ded.toFixed(2),t.hst.toFixed(2),t.receipts,t.count].map(csvEscape).join(",")}));download("annual-cra-tax-report-v4-1.csv",lines.join("
-"),"text/csv")}async function exportVehicleCSV(){const rows=await getAll("vehicle");download("vehicle-log.csv",["Date,Purpose,Business KM,Total KM"].concat(rows.map(r=>[r.date,r.purpose,r.businessKm,r.totalKm].map(csvEscape).join(","))).join("
-"),"text/csv")}async function exportFullJSON(share){const data={expenses:await getAll("expenses"),vehicle:await getAll("vehicle"),settings:await getAll("settings"),exportedAt:new Date().toISOString(),app:"physio-tax-receipt-tracker-v4-3-stable"};const content=JSON.stringify(data,null,2);const file=new File([content],"physio-tax-tracker-v4-1-full-backup.json",{type:"application/json"});if(share&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"Physio Tax Tracker Backup",text:"Save this backup to iCloud Drive or Google Drive."})}else{download("physio-tax-tracker-v4-1-full-backup.json",content,"application/json")}}async function importFullJSON(ev){const f=ev.target.files[0];if(!f)return;const data=JSON.parse(await f.text());if(!confirm("Restore this backup and replace current data?"))return;await clearStore("expenses");await clearStore("vehicle");await clearStore("settings");for(const e of data.expenses||[])await put("expenses",e);for(const v of data.vehicle||[])await put("vehicle",v);for(const s of data.settings||[])await put("settings",s);alert("Restored.");render()}async function renderSettings(){$("settings").innerHTML=`<div class="card"><h2>V4.1 Settings / Notes</h2><p class="small">After OCR, the app automatically populates vendor, date, amount, HST, category, sub-category, and receipt text. Always review fields before saving.</p></div><div class="card"><h2>Erase Data</h2><button class="danger" onclick="wipeAll()">Erase All App Data</button></div>`}async function wipeAll(){if(confirm("Erase all app data on this device?")){await clearStore("expenses");await clearStore("vehicle");await clearStore("settings");location.reload()}}async function render(){if(activeTab==="dashboard")await renderDashboard();if(activeTab==="expenses")await renderExpenses();if(activeTab==="receipts")await renderReceipts();if(activeTab==="vehicle")await renderVehicle();if(activeTab==="homeoffice")await renderHomeOffice();if(activeTab==="reports")await renderReports();if(activeTab==="settings")await renderSettings()}async function boot(){await openDB();initTabs();populateCategories();$("date").value=today();showTab("dashboard");/* V4.3 stable: service worker disabled to prevent reload crashes on GitHub Pages/iPhone */}boot();
-</script></body></html>
+
+function parseReceiptText(text) {
+  const compact = text.replace(/\s+/g, " ").trim();
+  const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+
+  const noise = /^(receipt|invoice|sale|debit|credit|visa|mastercard|interac|approved|thank|cashier|terminal|merchant|customer|copy|hst|gst|subtotal|total|tax|date|time|auth|change|balance|account|ref|aid|tvr|tsi|approved)/i;
+
+  let vendor = lines.find(line =>
+    line.length >= 2 &&
+    line.length <= 45 &&
+    !noise.test(line) &&
+    !/\d{4,}/.test(line)
+  ) || lines[0] || "";
+
+  vendor = vendor.replace(/[^a-zA-Z0-9 '&.-]/g, "").trim();
+
+  const datePatterns = [
+    {
+      regex: /\b(20\d{2})[-\/.](0?[1-9]|1[0-2])[-\/.](0?[1-9]|[12]\d|3[01])\b/,
+      format: match => `${match[1]}-${String(match[2]).padStart(2, "0")}-${String(match[3]).padStart(2, "0")}`
+    },
+    {
+      regex: /\b(0?[1-9]|[12]\d|3[01])[-\/.](0?[1-9]|1[0-2])[-\/.](20\d{2})\b/,
+      format: match => `${match[3]}-${String(match[2]).padStart(2, "0")}-${String(match[1]).padStart(2, "0")}`
+    },
+    {
+      regex: /\b(0?[1-9]|1[0-2])[-\/.](0?[1-9]|[12]\d|3[01])[-\/.](20\d{2})\b/,
+      format: match => `${match[3]}-${String(match[1]).padStart(2, "0")}-${String(match[2]).padStart(2, "0")}`
+    }
+  ];
+
+  let date = "";
+  for (const pattern of datePatterns) {
+    const match = compact.match(pattern.regex);
+    if (match) {
+      date = pattern.format(match);
+      break;
+    }
+  }
+
+  const toNumber = value => parseFloat(String(value).replace(/,/g, ""));
+
+  let amount = "";
+  const preferredAmountMatches = [...text.matchAll(/(?:amount due|balance due|grand total|total|purchase)\s*(?:cad|\$)?\s*[:\-]?\s*\$?\s*([0-9]+[.,][0-9]{2})/ig)]
+    .map(match => toNumber(match[1]));
+
+  if (preferredAmountMatches.length) {
+    amount = Math.max(...preferredAmountMatches);
+  } else {
+    const amounts = [...text.matchAll(/\$?\s*([0-9]+[.,][0-9]{2})/g)]
+      .map(match => toNumber(match[1]))
+      .filter(number => number > 0 && number < 100000);
+
+    if (amounts.length) amount = Math.max(...amounts);
+  }
+
+  let hst = "";
+  const taxMatch =
+    text.match(/\b(?:hst|gst|tax)\b[^\d$]{0,16}\$?\s*([0-9]+[.,][0-9]{2})/i) ||
+    text.match(/\$?\s*([0-9]+[.,][0-9]{2})[^\n]{0,18}\b(?:hst|gst|tax)\b/i);
+
+  if (taxMatch) {
+    hst = toNumber(taxMatch[1]);
+  } else if (amount) {
+    hst = estimateHSTFromTotal(amount);
+  }
+
+  const suggestion = getCategorySuggestion(vendor, text);
+
+  return {
+    vendor,
+    date,
+    amount,
+    hst,
+    category: suggestion.category,
+    subcategory: suggestion.subcategory
+  };
+}
+
+function populateFromOCR(parsed, text) {
+  setField("vendor", parsed.vendor);
+  setField("date", parsed.date || today());
+
+  if (parsed.amount) setField("amount", Number(parsed.amount).toFixed(2));
+  if (parsed.hst) setField("hst", Number(parsed.hst).toFixed(2));
+
+  $("category").value = parsed.category;
+  updateSubcategories();
+  $("subcategory").value = parsed.subcategory;
+
+  $("ocrText").value = text || "";
+
+  $("autofillBox").classList.remove("hidden");
+  $("autofillBox").innerHTML = `
+    <b>OCR complete. Fields populated.</b><br>
+    <span class="small">
+      Vendor: ${$("vendor").value || "Not found"}<br>
+      Date: ${$("date").value || "Not found"}<br>
+      Amount: ${$("amount").value ? money($("amount").value) : "Not found"}<br>
+      HST: ${$("hst").value ? money($("hst").value) : "Not found"}<br>
+      Category: ${$("category").value}<br>
+      Sub-Category: ${$("subcategory").value}<br>
+      Review the fields and tap Save Expense.
+    </span>
+  `;
+}
+
+async function runOCR() {
+  const file = $("receiptFile").files[0];
+
+  if (!file && !currentReceiptData) {
+    alert("Please upload a receipt image first.");
+    return;
+  }
+
+  if (!window.Tesseract) {
+    $("ocrStatus").innerHTML = "OCR library did not load. Check internet connection and reload.";
+    return;
+  }
+
+  $("ocrStatus").textContent = "Running OCR. This can take 10–30 seconds on iPhone...";
+
+  try {
+    const result = await Tesseract.recognize(file || currentReceiptData, "eng", {
+      logger: message => {
+        if (message.status) {
+          const progress = message.progress ? ` ${Math.round(message.progress * 100)}%` : "";
+          $("ocrStatus").textContent = `OCR: ${message.status}${progress}`;
+        }
+      }
+    });
+
+    const text = result.data.text || "";
+    const parsed = parseReceiptText(text);
+
+    populateFromOCR(parsed, text);
+    await checkDuplicate();
+
+    $("ocrStatus").textContent = "OCR finished. Fields were populated automatically.";
+  } catch (error) {
+    console.error(error);
+    $("ocrStatus").textContent = "OCR failed. Try a clearer receipt photo or enter details manually.";
+  }
+}
+
+async function checkDuplicate() {
+  const vendor = $("vendor").value.trim().toLowerCase();
+  const date = $("date").value;
+  const amount = parseFloat($("amount").value || 0);
+
+  $("duplicateBox").classList.add("hidden");
+
+  if (!vendor || !date || !amount) return false;
+
+  const expenses = await getExpenses();
+
+  const duplicate = expenses.find(expense =>
+    expense.id !== editId &&
+    String(expense.vendor || "").trim().toLowerCase() === vendor &&
+    expense.date === date &&
+    Math.abs(Number(expense.amount || 0) - amount) < 0.01
+  );
+
+  if (duplicate) {
+    $("duplicateBox").classList.remove("hidden");
+    $("duplicateBox").innerHTML = `
+      <b>Possible duplicate found.</b><br>
+      Existing: ${duplicate.date} • ${duplicate.vendor} • ${money(duplicate.amount)}
+    `;
+    return true;
+  }
+
+  return false;
+}
+
+async function saveExpense() {
+  const isDuplicate = await checkDuplicate();
+
+  if (isDuplicate && !confirm("This looks like a duplicate. Save anyway?")) {
+    return;
+  }
+
+  const expense = {
+    id: editId || uid(),
+    date: $("date").value || today(),
+    amount: parseFloat($("amount").value || 0),
+    hst: parseFloat($("hst").value || 0),
+    vendor: $("vendor").value.trim(),
+    category: $("category").value,
+    subcategory: $("subcategory").value,
+    businessUse: parseFloat($("businessUse").value || 100),
+    payment: $("payment").value,
+    receiptData: currentReceiptData,
+    receiptName: currentReceiptName,
+    ocrText: $("ocrText").value.trim(),
+    notes: $("notes").value.trim(),
+    updatedAt: new Date().toISOString()
+  };
+
+  if (!expense.amount) {
+    alert("Enter an amount before saving.");
+    return;
+  }
+
+  await putExpense(expense);
+  clearForm();
+  alert("Expense saved.");
+  showTab("expenses");
+}
+
+function clearForm() {
+  editId = null;
+  currentReceiptData = null;
+  currentReceiptName = "";
+
+  $("date").value = today();
+  $("amount").value = "";
+  $("hst").value = "";
+  $("vendor").value = "";
+  $("businessUse").value = "100";
+  $("payment").value = "Credit Card";
+  $("receiptFile").value = "";
+  $("receiptPreview").innerHTML = "";
+  $("ocrText").value = "";
+  $("notes").value = "";
+  $("autofillBox").classList.add("hidden");
+  $("duplicateBox").classList.add("hidden");
+  $("ocrStatus").textContent = "Upload a receipt, then tap Run Simple OCR.";
+
+  $("category").value = "Other";
+  updateSubcategories();
+}
+
+async function editExpense(id) {
+  const expenses = await getExpenses();
+  const expense = expenses.find(item => item.id === id);
+  if (!expense) return;
+
+  editId = id;
+  currentReceiptData = expense.receiptData || null;
+  currentReceiptName = expense.receiptName || "";
+
+  showTab("add");
+
+  $("date").value = expense.date;
+  $("amount").value = expense.amount;
+  $("hst").value = expense.hst || "";
+  $("vendor").value = expense.vendor || "";
+  $("category").value = expense.category;
+  updateSubcategories();
+  $("subcategory").value = expense.subcategory;
+  $("businessUse").value = expense.businessUse;
+  $("payment").value = expense.payment || "Credit Card";
+  $("ocrText").value = expense.ocrText || "";
+  $("notes").value = expense.notes || "";
+
+  $("receiptPreview").innerHTML = currentReceiptData
+    ? `Existing receipt attached.<br><img class="thumb" src="${currentReceiptData}">`
+    : "No receipt attached.";
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function deleteExpense(id) {
+  if (!confirm("Delete this expense?")) return;
+  await deleteExpenseById(id);
+  render();
+}
+
+function totals(expenses) {
+  return {
+    count: expenses.length,
+    total: expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0),
+    deductible: expenses.reduce((sum, expense) => sum + Number(expense.amount || 0) * Number(expense.businessUse || 100) / 100, 0),
+    hst: expenses.reduce((sum, expense) => sum + Number(expense.hst || 0) * Number(expense.businessUse || 100) / 100, 0),
+    receipts: expenses.filter(expense => expense.receiptData).length
+  };
+}
+
+function byYear(expenses, yearValue) {
+  return expenses.filter(expense => expense.date && expense.date.startsWith(String(yearValue)));
+}
+
+function byMonth(expenses, monthValue) {
+  return expenses.filter(expense => expense.date && expense.date.startsWith(monthValue));
+}
+
+async function renderDashboard() {
+  const expenses = await getExpenses();
+  const yearExpenses = byYear(expenses, currentYear());
+  const monthExpenses = byMonth(expenses, today().slice(0, 7));
+
+  const yearTotals = totals(yearExpenses);
+  const monthTotals = totals(monthExpenses);
+
+  $("dashboard").innerHTML = `
+    <div class="metrics">
+      <div class="metric"><span>This Month</span><b>${money(monthTotals.total)}</b></div>
+      <div class="metric"><span>Month HST</span><b>${money(monthTotals.hst)}</b></div>
+      <div class="metric"><span>YTD Deductible</span><b>${money(yearTotals.deductible)}</b></div>
+      <div class="metric"><span>Receipts</span><b>${yearTotals.receipts}/${yearTotals.count}</b></div>
+    </div>
+
+    <div class="card">
+      <h2>Quick Start</h2>
+      <p class="small">Take or upload a receipt photo, run simple OCR, review the populated fields, then save.</p>
+      <button onclick="showTab('add')">Add Receipt Expense</button>
+    </div>
+  `;
+}
+
+async function renderExpenses() {
+  const expenses = await getExpenses();
+  const sorted = [...expenses].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const total = totals(sorted);
+
+  $("expenses").innerHTML = `
+    <div class="card">
+      <h2>Expenses</h2>
+      <p class="small">${sorted.length} items • Total ${money(total.total)} • HST ${money(total.hst)}</p>
+
+      ${!sorted.length ? `<p class="small">No expenses yet.</p>` : `
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Vendor</th>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>HST</th>
+            <th>Receipt</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sorted.map(expense => `
+            <tr>
+              <td data-label="Date">${expense.date}</td>
+              <td data-label="Vendor">${expense.vendor || ""}</td>
+              <td data-label="Category">${expense.category}<br><span class="small">${expense.subcategory}</span></td>
+              <td data-label="Amount">${money(expense.amount)}<br><span class="small">Deductible: ${money(expense.amount * expense.businessUse / 100)}</span></td>
+              <td data-label="HST">${money(expense.hst || 0)}</td>
+              <td data-label="Receipt">${expense.receiptData ? `<img class="thumb" src="${expense.receiptData}" onclick="openReceipt(${expense.id})">` : "—"}</td>
+              <td data-label="Actions">
+                <button class="secondary" onclick="editExpense(${expense.id})">Edit</button>
+                <button class="danger" onclick="deleteExpense(${expense.id})">Delete</button>
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>`}
+    </div>
+  `;
+}
+
+async function openReceipt(id) {
+  const expenses = await getExpenses();
+  const expense = expenses.find(item => item.id === id);
+  if (!expense || !expense.receiptData) return;
+
+  const popup = window.open();
+  popup.document.write(`
+    <title>Receipt</title>
+    <body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh;">
+      <img src="${expense.receiptData}" style="max-width:100%;height:auto;">
+    </body>
+  `);
+}
+
+async function renderReceipts() {
+  const expenses = await getExpenses();
+  const receipts = expenses.filter(expense => expense.receiptData)
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+
+  $("receipts").innerHTML = `
+    <div class="card">
+      <h2>Receipt Library</h2>
+      ${!receipts.length ? `<p class="small">No receipts attached yet.</p>` : `
+      <div class="receipt-grid">
+        ${receipts.map(expense => `
+          <div class="receipt-card" onclick="openReceipt(${expense.id})">
+            <img src="${expense.receiptData}">
+            <div>
+              <b>${expense.vendor || "Receipt"}</b><br>
+              ${expense.date}<br>
+              ${money(expense.amount)}<br>
+              <span class="small">${expense.category}</span>
+            </div>
+          </div>
+        `).join("")}
+      </div>`}
+    </div>
+  `;
+}
+
+async function renderReports() {
+  const expenses = byYear(await getExpenses(), currentYear());
+  const yearTotals = totals(expenses);
+
+  const categoryMap = {};
+  for (const expense of expenses) {
+    if (!categoryMap[expense.category]) categoryMap[expense.category] = [];
+    categoryMap[expense.category].push(expense);
+  }
+
+  $("reports").innerHTML = `
+    <div class="card">
+      <h2>Annual Tax Report - ${currentYear()}</h2>
+      <div class="metrics">
+        <div class="metric"><span>Total</span><b>${money(yearTotals.total)}</b></div>
+        <div class="metric"><span>Deductible</span><b>${money(yearTotals.deductible)}</b></div>
+        <div class="metric"><span>HST</span><b>${money(yearTotals.hst)}</b></div>
+        <div class="metric"><span>Receipts</span><b>${yearTotals.receipts}/${yearTotals.count}</b></div>
+      </div>
+
+      <h3>By Category</h3>
+      <table>
+        <thead>
+          <tr><th>Category</th><th>Total</th><th>Deductible</th><th>HST</th><th>Receipts</th></tr>
+        </thead>
+        <tbody>
+          ${Object.keys(categoryMap).map(category => {
+            const categoryTotals = totals(categoryMap[category]);
+            return `
+              <tr>
+                <td data-label="Category">${category}</td>
+                <td data-label="Total">${money(categoryTotals.total)}</td>
+                <td data-label="Deductible">${money(categoryTotals.deductible)}</td>
+                <td data-label="HST">${money(categoryTotals.hst)}</td>
+                <td data-label="Receipts">${categoryTotals.receipts}/${categoryTotals.count}</td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      </table>
+
+      <button onclick="exportExpensesCSV()">Export Expenses CSV</button>
+      <button class="secondary" onclick="exportReportCSV()">Export Annual Report CSV</button>
+    </div>
+  `;
+}
+
+function csvEscape(value) {
+  return `"${String(value ?? "").replace(/"/g, '""')}"`;
+}
+
+function downloadFile(name, content, type) {
+  const blob = new Blob([content], { type });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = name;
+  link.click();
+}
+
+async function exportExpensesCSV() {
+  const expenses = await getExpenses();
+  const header = ["Date", "Vendor", "Amount", "HST", "Category", "Subcategory", "Business Use %", "Deductible Amount", "Payment", "Has Receipt", "Notes", "OCR Text"];
+
+  const rows = expenses.map(expense => [
+    expense.date,
+    expense.vendor,
+    expense.amount,
+    expense.hst,
+    expense.category,
+    expense.subcategory,
+    expense.businessUse,
+    (expense.amount * expense.businessUse / 100).toFixed(2),
+    expense.payment,
+    expense.receiptData ? "Yes" : "No",
+    expense.notes,
+    expense.ocrText
+  ].map(csvEscape).join(","));
+
+  downloadFile("tax-tracker-expenses.csv", [header.join(","), ...rows].join("\n"), "text/csv");
+}
+
+async function exportReportCSV() {
+  const expenses = byYear(await getExpenses(), currentYear());
+  const categoryMap = {};
+
+  for (const expense of expenses) {
+    if (!categoryMap[expense.category]) categoryMap[expense.category] = [];
+    categoryMap[expense.category].push(expense);
+  }
+
+  const rows = ["Category,Total,Deductible,HST,Receipt Count,Entry Count"];
+
+  for (const category of Object.keys(categoryMap)) {
+    const categoryTotals = totals(categoryMap[category]);
+    rows.push([
+      category,
+      categoryTotals.total.toFixed(2),
+      categoryTotals.deductible.toFixed(2),
+      categoryTotals.hst.toFixed(2),
+      categoryTotals.receipts,
+      categoryTotals.count
+    ].map(csvEscape).join(","));
+  }
+
+  downloadFile("tax-tracker-annual-report.csv", rows.join("\n"), "text/csv");
+}
+
+async function renderBackup() {
+  $("backup").innerHTML = `
+    <div class="card">
+      <h2>Backup & Restore</h2>
+      <p class="small">The full JSON backup includes your expenses and receipt images. Save it to iCloud Drive, Google Drive, or your computer.</p>
+
+      <div class="toolbar">
+        <button onclick="backupJSON(false)">Download Backup JSON</button>
+        <button class="secondary" onclick="backupJSON(true)">Share Backup</button>
+      </div>
+
+      <label>Restore Backup JSON</label>
+      <input type="file" accept=".json" onchange="restoreJSON(event)">
+
+      <button class="danger" onclick="deleteAllData()">Delete All Data</button>
+    </div>
+  `;
+}
+
+async function backupJSON(share) {
+  const data = {
+    app: "Tax Tracker Simple OCR",
+    version: "1.0",
+    exportedAt: new Date().toISOString(),
+    expenses: await getExpenses()
+  };
+
+  const content = JSON.stringify(data, null, 2);
+  const file = new File([content], "tax-tracker-backup.json", { type: "application/json" });
+
+  if (share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    await navigator.share({
+      files: [file],
+      title: "Tax Tracker Backup",
+      text: "Save this Tax Tracker backup to iCloud Drive or Google Drive."
+    });
+  } else {
+    downloadFile("tax-tracker-backup.json", content, "application/json");
+  }
+}
+
+async function restoreJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const data = JSON.parse(await file.text());
+
+  if (!confirm("Restore this backup? This will replace existing data.")) return;
+
+  await clearExpenses();
+
+  for (const expense of data.expenses || []) {
+    await putExpense(expense);
+  }
+
+  alert("Backup restored.");
+  render();
+}
+
+async function deleteAllData() {
+  if (!confirm("Delete all Tax Tracker data from this device?")) return;
+  await clearExpenses();
+  alert("All data deleted.");
+  render();
+}
+
+async function render() {
+  if (activeTab === "dashboard") await renderDashboard();
+  if (activeTab === "expenses") await renderExpenses();
+  if (activeTab === "receipts") await renderReceipts();
+  if (activeTab === "reports") await renderReports();
+  if (activeTab === "backup") await renderBackup();
+}
+
+async function boot() {
+  await openDB();
+  initTabs();
+  initCategories();
+  $("date").value = today();
+  $("category").value = "Other";
+  updateSubcategories();
+  showTab("dashboard");
+}
+
+boot();
+</script>
+</body>
+</html>
