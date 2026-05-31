@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#1b1209">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon.png">
-  <title>Tax Tracker</title>
+  <title>Tax Tracker Cloud</title>
 
   <style>
     :root {
@@ -292,14 +292,25 @@
   <div class="header-inner">
     <img class="logo" src="icon.png" alt="Tax Tracker logo">
     <div>
-      <h1>Tax Tracker</h1>
-      <div class="subtitle">Improved receipt OCR with image cleanup, expense tracking, reports, and backup</div>
+      <h1>Tax Tracker Cloud</h1>
+      <div class="subtitle">Firebase sync, Google Login, OCR receipts, reports, and backup</div>
     </div>
   </div>
   <nav id="tabs"></nav>
 </header>
 
 <main>
+  <section id="cloudStatus" class="card">
+    <h2>Cloud Sync</h2>
+    <div id="authStatus" class="small">Not signed in.</div>
+    <div class="toolbar">
+      <button onclick="signInWithGoogle()">Sign in with Google</button>
+      <button class="secondary" onclick="syncFromCloud()">Sync from Cloud</button>
+      <button class="secondary" onclick="syncToCloud()">Sync to Cloud</button>
+      <button class="danger" onclick="signOutUser()">Sign Out</button>
+    </div>
+  </section>
+
   <section id="dashboard" class="view"></section>
 
   <section id="add" class="view hidden">
@@ -387,6 +398,146 @@
   <section id="reports" class="view hidden"></section>
   <section id="backup" class="view hidden"></section>
 </main>
+
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+  import {
+    getAuth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
+    onAuthStateChanged,
+    signOut
+  } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+  import {
+    getFirestore,
+    doc,
+    getDoc,
+    setDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+  // STEP 1:
+  // Replace these placeholder values with your Firebase project config.
+  // Firebase Console > Project Settings > General > Your apps > Web app.
+  const firebaseConfig = {
+    apiKey: "PASTE_YOUR_API_KEY_HERE",
+    authDomain: "PASTE_YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "PASTE_YOUR_PROJECT_ID",
+    storageBucket: "PASTE_YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "PASTE_YOUR_MESSAGING_SENDER_ID",
+    appId: "PASTE_YOUR_APP_ID"
+  };
+
+  let app = null;
+  let auth = null;
+  let dbCloud = null;
+  let currentUser = null;
+  let firebaseReady = false;
+
+  function configLooksValid() {
+    return firebaseConfig.apiKey &&
+      !firebaseConfig.apiKey.includes("PASTE_") &&
+      firebaseConfig.projectId &&
+      !firebaseConfig.projectId.includes("PASTE_");
+  }
+
+  function setAuthStatus(message) {
+    const el = document.getElementById("authStatus");
+    if (el) el.innerHTML = message;
+  }
+
+  try {
+    if (configLooksValid()) {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      dbCloud = getFirestore(app);
+      firebaseReady = true;
+
+      getRedirectResult(auth).catch(error => {
+        console.error(error);
+        setAuthStatus("Google sign-in redirect failed. Check Firebase Authorized Domains.");
+      });
+
+      onAuthStateChanged(auth, user => {
+        currentUser = user;
+        if (user) {
+          setAuthStatus(`Signed in as <b>${user.email}</b>. Cloud sync is available.`);
+        } else {
+          setAuthStatus("Not signed in. Sign in with Google to sync between iPhone and webpage.");
+        }
+      });
+    } else {
+      setAuthStatus("Firebase is not configured yet. Add your Firebase config inside index.html.");
+    }
+  } catch (error) {
+    console.error(error);
+    setAuthStatus("Firebase failed to initialize. Check your config values.");
+  }
+
+  window.signInWithGoogle = async function () {
+    if (!firebaseReady) {
+      alert("Firebase is not configured yet. Add your Firebase config inside index.html.");
+      return;
+    }
+
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.warn("Popup failed; trying redirect.", error);
+      await signInWithRedirect(auth, provider);
+    }
+  };
+
+  window.signOutUser = async function () {
+    if (!firebaseReady || !auth) return;
+    await signOut(auth);
+  };
+
+  window.getCloudUser = function () {
+    return currentUser;
+  };
+
+  window.saveTaxTrackerCloudData = async function (data) {
+    if (!firebaseReady || !currentUser) {
+      alert("Sign in with Google first.");
+      return false;
+    }
+
+    const ref = doc(dbCloud, "users", currentUser.uid, "taxTracker", "main");
+    await setDoc(ref, {
+      ...data,
+      updatedAt: serverTimestamp(),
+      updatedBy: currentUser.email
+    });
+
+    setAuthStatus(`Synced to cloud as <b>${currentUser.email}</b>.`);
+    return true;
+  };
+
+  window.loadTaxTrackerCloudData = async function () {
+    if (!firebaseReady || !currentUser) {
+      alert("Sign in with Google first.");
+      return null;
+    }
+
+    const ref = doc(dbCloud, "users", currentUser.uid, "taxTracker", "main");
+    const snapshot = await getDoc(ref);
+
+    if (!snapshot.exists()) {
+      alert("No cloud backup found yet.");
+      return null;
+    }
+
+    setAuthStatus(`Loaded cloud data for <b>${currentUser.email}</b>.`);
+    return snapshot.data();
+  };
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
@@ -953,6 +1104,15 @@ async function saveExpense() {
   }
 
   await putExpense(expense);
+
+  if (window.getCloudUser && window.getCloudUser()) {
+    try {
+      await syncToCloud();
+    } catch (error) {
+      console.warn("Auto-sync failed.", error);
+    }
+  }
+
   clearForm();
   alert("Expense saved.");
   showTab("expenses");
@@ -1053,7 +1213,7 @@ async function renderDashboard() {
 
     <div class="card">
       <h2>Quick Start</h2>
-      <p class="small">Take or upload a receipt photo, run improved OCR with image cleanup, review the populated fields, then save.</p>
+      <p class="small">Sign in with Google to sync across iPhone and webpage. Then take or upload a receipt photo, run improved OCR, review the populated fields, and save.</p>
       <button onclick="showTab('add')">Add Receipt Expense</button>
     </div>
   `;
@@ -1250,6 +1410,57 @@ async function exportReportCSV() {
   downloadFile("tax-tracker-annual-report.csv", rows.join("\n"), "text/csv");
 }
 
+
+async function getAllAppData() {
+  return {
+    app: "Tax Tracker Cloud",
+    version: "firebase-google-login-v1",
+    exportedAt: new Date().toISOString(),
+    expenses: await getExpenses()
+  };
+}
+
+async function replaceAllAppData(data) {
+  await clearExpenses();
+
+  for (const expense of data.expenses || []) {
+    await putExpense(expense);
+  }
+
+  await render();
+}
+
+async function syncToCloud() {
+  if (!window.saveTaxTrackerCloudData) {
+    alert("Firebase is not ready.");
+    return;
+  }
+
+  const data = await getAllAppData();
+  const ok = await window.saveTaxTrackerCloudData(data);
+
+  if (ok) {
+    alert("Synced to Firebase cloud.");
+  }
+}
+
+async function syncFromCloud() {
+  if (!window.loadTaxTrackerCloudData) {
+    alert("Firebase is not ready.");
+    return;
+  }
+
+  const data = await window.loadTaxTrackerCloudData();
+
+  if (!data) return;
+
+  if (!confirm("Replace local data with cloud data?")) return;
+
+  await replaceAllAppData(data);
+  alert("Synced from Firebase cloud.");
+}
+
+
 async function renderBackup() {
   $("backup").innerHTML = `
     <div class="card">
@@ -1270,12 +1481,7 @@ async function renderBackup() {
 }
 
 async function backupJSON(share) {
-  const data = {
-    app: "Tax Tracker Simple OCR",
-    version: "1.0",
-    exportedAt: new Date().toISOString(),
-    expenses: await getExpenses()
-  };
+  const data = await getAllAppData();
 
   const content = JSON.stringify(data, null, 2);
   const file = new File([content], "tax-tracker-backup.json", { type: "application/json" });
