@@ -1,38 +1,22 @@
-# Physio Tax & Receipt Tracker PWA - Version 2
+# Physio Tax & Receipt Tracker - OCR Update
 
-A private, offline-first web app designed for a self-employed physiotherapist/contractor.
+Version 3 adds automatic receipt OCR and auto-extraction.
 
-## Included Features
+## New Features
+- Scan receipt photos using in-browser OCR
+- Auto-fill vendor
+- Auto-fill date
+- Auto-fill total amount
+- Auto-fill HST/GST/tax where detected
+- Store OCR text with each expense
+- Search OCR text in the Expenses tab
+- Export OCR text and HST in CSV
+- Full JSON backup includes receipt images and OCR text
 
-- Expense tracking with custom CRA-friendly categories
-- Receipt photo/PDF attachment for each expense
-- Receipt library
-- Searchable receipt text / OCR-ready field
-- Vehicle mileage log
-- Home office calculator
-- Dashboard with yearly deductible totals
-- Expense CSV export
-- Vehicle CSV export
-- Full JSON backup/restore, including receipt images
-- Offline support after first load
-- Local PIN lock
+## Important
+OCR is not perfect. Always review the extracted vendor, date, HST, and amount before saving.
 
-## Important Notes
+The first OCR scan requires internet access to load Tesseract.js from CDN:
+https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js
 
-- Data is stored locally in your browser using IndexedDB.
-- Export a full JSON backup regularly.
-- Real automated OCR and Face ID require additional online services/native integrations. This version includes receipt photo capture and an OCR-ready searchable text field.
-
-## Install on iPhone
-
-1. Host this folder online using GitHub Pages, Netlify, Vercel, or private hosting.
-2. Open the hosted link in Safari on your iPhone.
-3. Tap Share.
-4. Tap Add to Home Screen.
-
-## Files
-
-- index.html
-- manifest.webmanifest
-- service-worker.js
-- icon.svg
+Your app data and receipts remain stored locally in your browser.
